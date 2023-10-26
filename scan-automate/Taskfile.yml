@@ -1,0 +1,13 @@
+version: "3"
+
+tasks:
+  default: task --list-all
+  k8s:delete: minikube delete -p fncyber
+  k8s:up:
+    deps:
+      - k8s:delete
+    cmd: minikube start --driver=docker --cpus=6 --memory=6g -p fncyber
+  k8s:down: minikube stop -p fncyber
+  up:
+    dir: bin
+    cmd: ./k8s-provision.sh
