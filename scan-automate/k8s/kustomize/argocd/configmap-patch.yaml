@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+data:
+  resource.compareoptions: |
+    # disables status field diffing in specified resource types
+    ignoreAggregatedRoles: true
