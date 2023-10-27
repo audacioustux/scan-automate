@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{
-    http::{HeaderValue, Method},
+    http::{header, HeaderValue, Method},
     response::{Html, IntoResponse},
     routing::get,
     Json, Router,
@@ -21,7 +21,7 @@ async fn main() {
         let app = Router::new().route("/json", get(json)).layer(
             CorsLayer::new()
                 .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
-                .allow_headers(vec![http::header::CONTENT_TYPE])
+                .allow_headers(vec![header::CONTENT_TYPE])
                 .allow_methods([Method::GET]),
         );
         serve(app, 4000).await;
@@ -36,7 +36,7 @@ async fn serve(app: Router, port: u16) {
     let mut listenfd = ListenFd::from_env();
     let listener = match listenfd.take_tcp_listener(0).unwrap() {
         Some(listener) => TcpListener::from_std(listener).unwrap(),
-        None => TcpListener::bind("[::]:3000").await.unwrap(),
+        None => TcpListener::bind(addr).await.unwrap(),
     };
 
     axum::serve(listener, app).await.unwrap();
