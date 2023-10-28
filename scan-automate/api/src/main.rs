@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use axum::{
     http::{header, HeaderValue, Method},
     response::{Html, IntoResponse},
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
 use listenfd::ListenFd;
@@ -18,7 +18,7 @@ async fn main() {
     };
 
     let backend = async {
-        let app = Router::new().route("/json", get(json)).layer(
+        let app = Router::new().route("/scan", post(scan)).layer(
             CorsLayer::new()
                 .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
                 .allow_headers(vec![header::CONTENT_TYPE])
@@ -38,15 +38,13 @@ async fn serve(app: Router, port: u16) {
         Some(listener) => TcpListener::from_std(listener).unwrap(),
         None => TcpListener::bind(addr).await.unwrap(),
     };
-
-    axum::serve(listener, app).await.unwrap();
 }
 
 async fn html() -> impl IntoResponse {
     Html(
         r#"
         <script>
-            fetch('http://localhost:4000/json')
+            fetch('http://localhost:4000/scan')
               .then(response => response.json())
               .then(data => console.log(data));
         </script>
@@ -54,6 +52,13 @@ async fn html() -> impl IntoResponse {
     )
 }
 
-async fn json() -> impl IntoResponse {
-    Json(vec!["one", "two", "three"])
+#[derive(Debug, Deserialize)]
+struct AddScanRequest {
+    url: String,
+    email: String,
+}
+
+async fn scan(Json(input): Json<CreateTodo>) -> impl IntoResponse {
+    dbg!(&input);
+    Json(input)
 }

@@ -4,11 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { git = "https://github.com/tokio-rs/axum.git", branch = "main", features = [
-    "http2",
-    "tracing",
-    "multipart",
-] }
+axum = "0.6"
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -19,3 +15,5 @@ tracing-subscriber = "0.3"
 lettre = "0.11.1"
 uuid = "1"
 tower-http = { version = "0.4.0", features = ["cors"] }
+jsonwebtoken = "9"
+validator = { version = "0.16", features = ["derive"] }
