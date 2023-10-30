@@ -6,6 +6,10 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use lettre::{
+    message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+    SmtpTransport, Transport,
+};
 use listenfd::ListenFd;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
@@ -21,7 +25,7 @@ async fn main() {
     let backend = async {
         let app = Router::new().route("/scan", post(scan)).layer(
             CorsLayer::new()
-                .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+                .allow_origin("http://127.0.0.1:3000".parse::<HeaderValue>().unwrap())
                 .allow_headers(vec![header::CONTENT_TYPE])
                 .allow_methods([Method::GET]),
         );
@@ -75,6 +79,32 @@ struct AddScanRequest {
 }
 
 async fn scan(Json(req): Json<AddScanRequest>) -> impl IntoResponse {
-    dbg!(&req);
+    let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
+    let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
+    let smtp_host = std::env::var("SMTP_HOST").unwrap();
+
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .to("Tanjim Hossain <tanjimhossain.pro@gmail.com>"
+            .parse()
+            .unwrap())
+        .subject("Happy new year")
+        .header(ContentType::TEXT_PLAIN)
+        .body(String::from("Be happy!"))
+        .unwrap();
+
+    let creds = Credentials::new(smtp_username, smtp_password);
+
+    let mailer = SmtpTransport::relay(&smtp_host)
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    // Send the email
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {e:?}"),
+    }
+
     (StatusCode::CREATED, Json(req))
 }
