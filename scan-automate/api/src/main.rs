@@ -1,34 +1,51 @@
-use std::net::SocketAddr;
+mod config;
+mod errors;
+
+use std::{error::Error, net::SocketAddr};
 
 use axum::{
+    extract::Path,
     http::{header, HeaderValue, Method, StatusCode},
     response::{Html, IntoResponse},
     routing::{get, post},
     Json, Router,
 };
+use clap::Parser;
+use config::{Config, CONFIG};
+use errors::AppError;
+use jsonwebtoken::{
+    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
 use lettre::{
-    message::header::ContentType, transport::smtp::authentication::Credentials, Message,
-    SmtpTransport, Transport,
+    message::{header::ContentType, MessageBuilder},
+    transport::smtp::authentication::Credentials,
+    Message, SmtpTransport, Transport,
 };
 use listenfd::ListenFd;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
+    Config::parse();
+
     let frontend = async {
         let app = Router::new().route("/", get(html));
         serve(app, 3000).await;
     };
 
     let backend = async {
-        let app = Router::new().route("/scan", post(scan)).layer(
-            CorsLayer::new()
-                .allow_origin("http://127.0.0.1:3000".parse::<HeaderValue>().unwrap())
-                .allow_headers(vec![header::CONTENT_TYPE])
-                .allow_methods([Method::GET]),
-        );
+        let app = Router::new()
+            .route("/scans", post(scans_post))
+            .route("/scans/confirm/:token", get(scans_confirm))
+            .layer(
+                CorsLayer::new()
+                    .allow_origin("*".parse::<HeaderValue>().unwrap())
+                    .allow_headers(vec![header::CONTENT_TYPE])
+                    .allow_methods([Method::GET]),
+            );
         serve(app, 4000).await;
     };
 
@@ -53,7 +70,7 @@ async fn html() -> impl IntoResponse {
         r#"
         check console
         <script>
-            fetch('http://localhost:4000/scan', {
+            fetch('http://localhost:4000/scans', {
                 method: "post",
                 headers: {
                   'Accept': 'application/json',
@@ -78,33 +95,100 @@ struct AddScanRequest {
     email: String,
 }
 
-async fn scan(Json(req): Json<AddScanRequest>) -> impl IntoResponse {
-    let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
-    let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
-    let smtp_host = std::env::var("SMTP_HOST").unwrap();
+fn get_mailer() -> SmtpTransport {
+    let smtp_host = &CONFIG.smtp_host;
+    let smtp_username = &CONFIG.smtp_username;
+    let smtp_password = &CONFIG.smtp_password;
 
-    let email = Message::builder()
-        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+    let creds = Credentials::new(smtp_username.into(), smtp_password.into());
+
+    SmtpTransport::relay(&smtp_host)
+        .unwrap()
+        .credentials(creds)
+        .build()
+}
+
+fn get_mail_builder() -> MessageBuilder {
+    let from = &CONFIG.email_from;
+
+    Message::builder()
+        .from(from.parse().unwrap())
+        .reply_to(from.parse().unwrap())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ScanRequestClaims {
+    url: String,
+    sub: String,
+    exp: i64,
+}
+
+fn create_scan_request_token(url: &str, sub: &str) -> Result<String, jsonwebtoken::errors::Error> {
+    let exp = chrono::Utc::now()
+        .checked_add_signed(chrono::Duration::days(1))
+        .expect("valid timestamp")
+        .timestamp();
+
+    let claims = ScanRequestClaims {
+        url: url.into(),
+        sub: sub.into(),
+        exp,
+    };
+
+    encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(CONFIG.jwt_secret.as_ref()),
+    )
+}
+
+fn scan_request_email(token: &str) -> Result<Message, impl Error> {
+    let template = |token: &str| {
+        format!(
+            r#"
+            Hi,
+
+            Please confirm your scan request by clicking the link below:
+
+            http://localhost:4000/scans/confirm/{}
+            "#,
+            token
+        )
+    };
+
+    get_mail_builder()
         .to("Tanjim Hossain <tanjimhossain.pro@gmail.com>"
             .parse()
             .unwrap())
-        .subject("Happy new year")
+        .subject("Confirm Scan Request")
         .header(ContentType::TEXT_PLAIN)
-        .body(String::from("Be happy!"))
-        .unwrap();
+        .body(template(token))
+}
 
-    let creds = Credentials::new(smtp_username, smtp_password);
+async fn scans_post(Json(req): Json<AddScanRequest>) -> Result<impl IntoResponse, AppError> {
+    let AddScanRequest { url, email } = req;
 
-    let mailer = SmtpTransport::relay(&smtp_host)
-        .unwrap()
-        .credentials(creds)
-        .build();
+    let token = create_scan_request_token(&url, &email)?;
+    let email = scan_request_email(&token)?;
+    get_mailer().send(&email)?;
 
-    // Send the email
-    match mailer.send(&email) {
-        Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {e:?}"),
-    }
+    Ok((StatusCode::OK, Json(json!({ "status": "ok" }))))
+}
 
-    (StatusCode::CREATED, Json(req))
+fn validate_scan_request_token(token: &str) -> Result<TokenData<ScanRequestClaims>, impl Error> {
+    let validation = Validation::new(Algorithm::HS256);
+
+    decode::<ScanRequestClaims>(
+        &token,
+        &DecodingKey::from_secret(CONFIG.jwt_secret.as_ref()),
+        &validation,
+    )
+}
+
+async fn scans_confirm(Path(token): Path<String>) -> Result<impl IntoResponse, AppError> {
+    let claims = validate_scan_request_token(&token)?;
+
+    dbg!(claims);
+
+    Ok((StatusCode::OK, Json(json!({ "status": "ok" }))))
 }
