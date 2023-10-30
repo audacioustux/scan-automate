@@ -1,12 +1,13 @@
 use std::net::SocketAddr;
 
 use axum::{
-    http::{header, HeaderValue, Method},
+    http::{header, HeaderValue, Method, StatusCode},
     response::{Html, IntoResponse},
     routing::{get, post},
     Json, Router,
 };
 use listenfd::ListenFd;
+use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 
@@ -38,13 +39,28 @@ async fn serve(app: Router, port: u16) {
         Some(listener) => TcpListener::from_std(listener).unwrap(),
         None => TcpListener::bind(addr).await.unwrap(),
     };
+
+    println!("Listening on {}", addr);
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn html() -> impl IntoResponse {
     Html(
         r#"
+        check console
         <script>
-            fetch('http://localhost:4000/scan')
+            fetch('http://localhost:4000/scan', {
+                method: "post",
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+                },
+
+                body: JSON.stringify({
+                  url: "https://audacioustux.com",
+                  email: "tangimhossain1@gmail.com"
+                })
+            })
               .then(response => response.json())
               .then(data => console.log(data));
         </script>
@@ -52,13 +68,13 @@ async fn html() -> impl IntoResponse {
     )
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct AddScanRequest {
     url: String,
     email: String,
 }
 
-async fn scan(Json(input): Json<CreateTodo>) -> impl IntoResponse {
-    dbg!(&input);
-    Json(input)
+async fn scan(Json(req): Json<AddScanRequest>) -> impl IntoResponse {
+    dbg!(&req);
+    (StatusCode::CREATED, Json(req))
 }

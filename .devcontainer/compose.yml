@@ -3,8 +3,8 @@ services:
     build:
       context: .
     environment:
-      - GIT_TOKEN
       - GIT_USERNAME
+      - GIT_TOKEN
       - DOCKER_USERNAME
       - DOCKER_TOKEN
       - CLOUDFLARE_TUNNEL_TOKEN

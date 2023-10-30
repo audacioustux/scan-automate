@@ -6,6 +6,3 @@ resolver = "2"
 lto = "thin"
 opt-level = 3
 debug = false
-
-[profile.dev]
-incremental = true

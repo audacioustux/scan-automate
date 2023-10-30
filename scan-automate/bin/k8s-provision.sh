@@ -41,7 +41,7 @@ deploy-argocd-apps(){
 
 deploy-secrets(){
     echo "Deploying secrets..."
-    local git=`kubectl create secret generic git-config --from-literal=username=$GIT_USERNAME --from-literal=password=$GIT_TOKEN --dry-run=client -o yaml`
+    local git=`kubectl create secret generic git-config --from-literal=username=${GIT_USERNAME:?} --from-literal=password=${GIT_TOKEN:?} --dry-run=client -o yaml`
     local docker=`kubectl create secret generic docker-config --from-file=$HOME/.docker/config.json --dry-run=client -o yaml`
 
     echo "$git" | kubectl apply -n argo -f -
