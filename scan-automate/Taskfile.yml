@@ -5,7 +5,8 @@ tasks:
   install:deps: cargo install systemfd cargo-watch
   api:dev: 
     dep: install:deps
-    cmd: systemfd --no-pid -s http::3000 -s http::4000 -- cargo watch -x run
+    cmd: systemfd --no-pid -s http::4000 -- cargo watch -x run
+  api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust
   k8s:delete: minikube delete -p fncyber
   k8s:up:
     deps:

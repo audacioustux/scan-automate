@@ -3,6 +3,8 @@ use once_cell::sync::Lazy;
 
 #[derive(clap::Parser, Debug)]
 pub struct Config {
+    #[clap(long, env, default_value = "4000")]
+    pub port: u16,
     #[clap(long, env)]
     pub smtp_host: String,
     #[clap(long, env)]

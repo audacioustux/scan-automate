@@ -1,18 +1,13 @@
-mod config;
-mod errors;
+use std::error::Error;
 
-use std::{error::Error, net::SocketAddr};
-
+use api::{config::CONFIG, errors::AppError, serve};
 use axum::{
     extract::Path,
     http::{header, HeaderValue, Method, StatusCode},
-    response::{Html, IntoResponse},
+    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
-use clap::Parser;
-use config::{Config, CONFIG};
-use errors::AppError;
 use jsonwebtoken::{
     decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
 };
@@ -21,72 +16,22 @@ use lettre::{
     transport::smtp::authentication::Credentials,
     Message, SmtpTransport, Transport,
 };
-use listenfd::ListenFd;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
-    Config::parse();
-
-    let frontend = async {
-        let app = Router::new().route("/", get(html));
-        serve(app, 3000).await;
-    };
-
-    let backend = async {
-        let app = Router::new()
-            .route("/scans", post(scans_post))
-            .route("/scans/confirm/:token", get(scans_confirm))
-            .layer(
-                CorsLayer::new()
-                    .allow_origin("*".parse::<HeaderValue>().unwrap())
-                    .allow_headers(vec![header::CONTENT_TYPE])
-                    .allow_methods([Method::GET]),
-            );
-        serve(app, 4000).await;
-    };
-
-    tokio::join!(frontend, backend);
-}
-
-async fn serve(app: Router, port: u16) {
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
-
-    let mut listenfd = ListenFd::from_env();
-    let listener = match listenfd.take_tcp_listener(0).unwrap() {
-        Some(listener) => TcpListener::from_std(listener).unwrap(),
-        None => TcpListener::bind(addr).await.unwrap(),
-    };
-
-    println!("Listening on {}", addr);
-    axum::serve(listener, app).await.unwrap();
-}
-
-async fn html() -> impl IntoResponse {
-    Html(
-        r#"
-        check console
-        <script>
-            fetch('http://localhost:4000/scans', {
-                method: "post",
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json'
-                },
-
-                body: JSON.stringify({
-                  url: "https://audacioustux.com",
-                  email: "tangimhossain1@gmail.com"
-                })
-            })
-              .then(response => response.json())
-              .then(data => console.log(data));
-        </script>
-        "#,
-    )
+    let app = Router::new()
+        .route("/scans", post(scans_post))
+        .route("/scans/confirm/:token", get(scans_confirm))
+        .layer(
+            CorsLayer::new()
+                .allow_origin("*".parse::<HeaderValue>().unwrap())
+                .allow_headers(vec![header::CONTENT_TYPE])
+                .allow_methods([Method::GET]),
+        );
+    serve(app, CONFIG.port).await;
 }
 
 #[derive(Debug, Deserialize, Serialize)]
