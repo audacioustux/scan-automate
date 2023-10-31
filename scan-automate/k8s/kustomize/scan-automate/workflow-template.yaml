@@ -34,15 +34,10 @@ spec:
             when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
     # echo out the url, email, and scans
     - name: echo
-      inputs:
-        parameters:
-          - name: url
-          - name: email
-          - name: scans
       container:
         image: alpine:latest
         command: [echo]
-        args: ["url: {{inputs.parameters.url}}\nemail: {{inputs.parameters.email}}\nscans: {{inputs.parameters.scans}}"]
+        args: ["url: {{workflow.parameters.url}}\nemail: {{workflow.parameters.email}}\nscans: {{workflow.parameters.scans}}"]
     - name: rustscan
       script:
         image: python:alpine3.6
