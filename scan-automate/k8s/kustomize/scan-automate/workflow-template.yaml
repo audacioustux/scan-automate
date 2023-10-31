@@ -28,13 +28,49 @@ spec:
         tasks:
           - name: rustscan
             template: rustscan
+          - name: zap
+            template: zap
+          - name: print
+            template: print
             # when rustscan is in `scans` array
             # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
     - name: rustscan
       container:
-        image: rustscan/rustscan:latest
+        image: rustscan/rustscan:2.1.1
         args:
-          - "-a {{workflow.parameters.url}}"
+          - -a
+          - "{{workflow.parameters.url}}"
+          - --accessible
+          - "> /workdir/rustscan.txt"
+    - name: zap
+      container:
+        image: ghcr.io/zaproxy/zaproxy:stable
+        cmd:
+          - zap-full-scan.py
+          - -t
+          - "{{workflow.parameters.url}}"
+          - -w
+          - /workdir/zap-report.md
+      volumeMounts:
+        - name: workdir
+          mountPath: /workdir
+    - name: print
+      inputs:
+        artifacts:
+          - name: rustscan
+            path: /workdir/rustscan.txt
+          - name: zap
+            path: /workdir/zap-report.md
+      container:
+        image: alpine
+        command: [sh, -c]
+        args:
+          - |
+            cat /workdir/rustscan.txt
+            cat /workdir/zap-report.md
+      volumeMounts:
+        - name: workdir
+          mountPath: /workdir
   volumes:
     - name: docker-config
       secret:
