@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: ci-workflow
+  name: scan-workflow
   namespace: argo
 spec:
-  generateName: ci-
-  entrypoint: ci
+  generateName: scan-
+  entrypoint: scan
   artifactGC:
     strategy: OnWorkflowDeletion
   volumeClaimTemplates:
@@ -23,13 +23,26 @@ spec:
       - name: email
       - name: scans
   templates:
-    - name: ci
+    - name: scan
       dag:
         tasks:
+          - name: echo
+            template: echo
           - name: rustscan
             template: rustscan
             # when rustscan is in `scans` array
             when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
+    # echo out the url, email, and scans
+    - name: echo
+      inputs:
+        parameters:
+          - name: url
+          - name: email
+          - name: scans
+      container:
+        image: alpine:latest
+        command: [echo]
+        args: ["url: {{inputs.parameters.url}}\nemail: {{inputs.parameters.email}}\nscans: {{inputs.parameters.scans}}"]
     - name: rustscan
       script:
         image: python:alpine3.6
