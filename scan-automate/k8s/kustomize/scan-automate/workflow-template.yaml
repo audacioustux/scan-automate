@@ -58,12 +58,6 @@ spec:
         - name: workdir
           mountPath: /workdir
     - name: print
-      inputs:
-        artifacts:
-          - name: rustscan
-            path: /workdir/rustscan.txt
-          - name: zap
-            path: /workdir/zap-report.md
       container:
         image: alpine
         command: [sh, -c]
