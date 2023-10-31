@@ -14,6 +14,7 @@ services:
       - SMTP_HOST
       - SMTP_USERNAME
       - SMTP_PASSWORD
+      - JWT_SECRET
     volumes:
       - ../..:/workspaces:rw,cached
     init: true

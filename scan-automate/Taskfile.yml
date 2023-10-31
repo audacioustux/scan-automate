@@ -2,19 +2,7 @@ version: "3"
 
 tasks:
   default: task --list-all
-  install:deps: cargo install systemfd cargo-watch
-  api:dev: 
-    dep: install:deps
-    cmd: systemfd --no-pid -s http::4000 -- cargo watch -x run
-  api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust
-  k8s:delete: minikube delete -p fncyber
-  k8s:up:
-    deps:
-      - k8s:delete
-    cmd: minikube start --driver=docker --cpus=6 --memory=6g -p fncyber
-  k8s:tunnel: minikube tunnel -p fncyber --bind-address 0.0.0.0
-  k8s:down: minikube stop -p fncyber
-  k8s:provision: ./bin/k8s-provision.sh
+  up: ./bin/up.sh
   cf-tunnel:
     vars:
       NS: cloudflared
@@ -28,4 +16,10 @@ tasks:
   update-kubeconfig:
     dir: terraform
     cmd: aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
-
+  ###
+  api:deps: cargo install systemfd cargo-watch
+  api:dev: 
+    deps: 
+      - api:deps
+    cmd: systemfd --no-pid -s http::8080 -- cargo watch -x run
+  api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust

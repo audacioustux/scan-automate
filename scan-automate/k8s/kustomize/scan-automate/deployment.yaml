@@ -1,0 +1,24 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: scan-automate
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: scan-automate
+  template:
+    metadata:
+      labels:
+        app: scan-automate
+    spec:
+      containers:
+      - name: scan-automate
+        image: scan-automate-api
+        pullPolicy: never
+        ports:
+        - name: http
+          containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: scan-automate-api
