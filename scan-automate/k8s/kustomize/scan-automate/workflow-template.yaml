@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: ci-workflow
+  namespace: argo
+spec:
+  generateName: ci-
+  entrypoint: ci
+  artifactGC:
+    strategy: OnWorkflowDeletion
+  volumeClaimTemplates:
+    - metadata:
+        name: workdir
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 256Mi
+  arguments:
+    parameters:
+      - name: url
+      - name: email
+      - name: scans
+  templates:
+    - name: ci
+      dag:
+        tasks:
+          - name: rustscan
+            template: rustscan
+            # when rustscan is in `scans` array
+            when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
+    - name: rustscan
+      script:
+        image: python:alpine3.6
+        command: [python]
+        source: |
+          import random
+          result = "heads" if random.randint(0,1) == 0 else "tails"
+          print(result)
+  volumes:
+    - name: docker-config
+      secret:
+        secretName: docker-config
+        # create docker-config secret with `kubectl create secret generic docker-config --from-file=$HOME/.docker/config.json`
