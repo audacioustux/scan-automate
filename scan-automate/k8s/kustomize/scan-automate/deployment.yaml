@@ -15,6 +15,7 @@ spec:
       containers:
       - name: scan-automate
         image: scan-automate-api
+        imagePullPolicy: Never
         ports:
         - name: http
           containerPort: 8080
