@@ -31,7 +31,7 @@ spec:
           - name: rustscan
             template: rustscan
             # when rustscan is in `scans` array
-            when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
+            # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
     # echo out the url, email, and scans
     - name: echo
       container:
