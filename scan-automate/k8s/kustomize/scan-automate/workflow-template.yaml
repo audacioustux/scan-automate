@@ -26,26 +26,15 @@ spec:
     - name: scan
       dag:
         tasks:
-          - name: echo
-            template: echo
           - name: rustscan
             template: rustscan
             # when rustscan is in `scans` array
             # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
-    # echo out the url, email, and scans
-    - name: echo
-      container:
-        image: alpine:latest
-        command: [echo]
-        args: ["url: {{workflow.parameters.url}}\nemail: {{workflow.parameters.email}}\nscans: {{workflow.parameters.scans}}"]
     - name: rustscan
-      script:
-        image: python:alpine3.6
-        command: [python]
-        source: |
-          import random
-          result = "heads" if random.randint(0,1) == 0 else "tails"
-          print(result)
+      container:
+        image: rustscan/rustscan:latest
+        args:
+          - "-a {{workflow.parameters.url}}"
   volumes:
     - name: docker-config
       secret:
