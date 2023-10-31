@@ -43,12 +43,10 @@ deploy-secrets(){
     echo "Deploying secrets..."
     local git=`kubectl create secret generic git-config --from-literal=username=${GIT_USERNAME:?} --from-literal=password=${GIT_TOKEN:?} --dry-run=client -o yaml`
     local docker=`kubectl create secret generic docker-config --from-file=$HOME/.docker/config.json --dry-run=client -o yaml`
-    local smtp=`kubectl create secret generic smtp-config --from-literal=host=${SMTP_HOST:?} --from-literal=username=${SMTP_USERNAME:?} --from-literal=password=${SMTP_PASSWORD:?} --dry-run=client -o yaml`
-    local scan_automate_api=`kubectl create secret generic scan-automate-api --from-literal=jwt-secret=${JWT_SECRET:?} --dry-run=client -o yaml`
+    local scan_automate_api=`kubectl create secret generic scan-automate-api --from-literal=JWT_SECRET=${JWT_SECRET:?} --from-literal=SMTP_HOST=${SMTP_HOST:?} --from-literal=SMTP_USERNAME=${SMTP_USERNAME:?} --from-literal=SMTP_PASSWORD=${SMTP_PASSWORD:?} --dry-run=client -o yaml`
 
     echo "$git" | kubectl apply -n argo -f -
     echo "$docker" | kubectl apply -n argo -f -
-    echo "$smtp" | kubectl apply -n scan-automate -f -
     echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
 }
 
