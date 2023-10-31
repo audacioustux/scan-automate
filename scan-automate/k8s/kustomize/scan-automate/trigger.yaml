@@ -2,6 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
   name: scan-workflow
+  namespace: argo-events
 spec:
   service:
     ports:
@@ -17,6 +18,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
   name: webhook
+  namespace: argo-events
 spec:
   dependencies:
     - name: scan-workflow
