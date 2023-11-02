@@ -52,7 +52,7 @@ deploy-secrets(){
 
 deploy-argocd
 login-argocd
-add-private-repos
+# add-private-repos
 deploy-argocd-apps
 
 ebort -- deploy-secrets 2> /dev/null
