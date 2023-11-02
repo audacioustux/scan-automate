@@ -42,7 +42,10 @@ spec:
           - |
             echo "url: {{workflow.parameters.url}}"
             echo "email: {{workflow.parameters.email}}"
-            echo "scans: {{workflow.parameters.scans[0]}}"
+            echo "scans: {{workflow.parameters.scans}}"
+            # echo the first element of scans
+            echo "first scan: {{=item(0, workflow.parameters.scans)}}"
+
     # - name: rustscan
     #   output:
     #     artifacts:
