@@ -40,6 +40,7 @@ spec:
     - name: rustscan
       container:
         image: rustscan/rustscan:2.1.1
+        cmd: [sh, -c]
         args:
           - -a
           - "{{workflow.parameters.url}}"
