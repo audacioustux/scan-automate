@@ -40,33 +40,36 @@ spec:
     - name: rustscan
       container:
         image: rustscan/rustscan:2.1.1
+        workingDir: /workdir
         command: ["/bin/sh"]
         args:
           - -c
-          - rustscan -r 1-65535 -t 5000 -a --accessible {{workflow.parameters.url}} > /workdir/rustscan.txt
+          - rustscan -r 1-65535 -t 5000 -a --accessible {{workflow.parameters.url}} > rustscan.txt
       volumeMounts:
         - name: workdir
           mountPath: /workdir
     - name: zap
       container:
         image: ghcr.io/zaproxy/zaproxy:stable
+        workingDir: /workdir
         command:
           - zap-full-scan.py
           - -t
           - "{{workflow.parameters.url}}"
           - -w
-          - /workdir/zap-report.md
+          - zap-report.md
       volumeMounts:
         - name: workdir
           mountPath: /workdir
     - name: print
       container:
         image: alpine
+        workingDir: /workdir
         command: [sh, -c]
         args:
           - |
-            cat /workdir/rustscan.txt
-            cat /workdir/zap-report.md
+            cat rustscan.txt
+            cat zap-report.md
       volumeMounts:
         - name: workdir
           mountPath: /workdir
