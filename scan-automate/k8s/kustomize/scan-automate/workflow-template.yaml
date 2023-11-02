@@ -40,8 +40,9 @@ spec:
     - name: rustscan
       container:
         image: rustscan/rustscan:2.1.1
-        command: ["/bin/sh", "-c"]
+        command: ["/bin/sh"]
         args:
+          - -c
           - rustscan -r 1-65535 -t 5000 -a --accessible {{workflow.parameters.url}} > /workdir/rustscan.txt
     - name: zap
       container:
