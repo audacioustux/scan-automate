@@ -26,14 +26,14 @@ spec:
     - name: scan
       dag:
         tasks:
-          # - name: rustscan
-          #   template: rustscan
+          - name: rustscan
+            template: rustscan
           - name: zap
             template: zap
           - name: print
             template: print
             dependencies:
-              # - rustscan
+              - rustscan
               - zap
             # when rustscan is in `scans` array
             # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
@@ -70,8 +70,9 @@ spec:
         workingDir: /workdir
         command: [sh, -c]
         args:
-          - >-
-            cat rustscan-report.txt zap-report.md
+          - |
+            cat rustscan.txt
+            cat zap-report.md
         volumeMounts:
           - name: workdir
             mountPath: /workdir
