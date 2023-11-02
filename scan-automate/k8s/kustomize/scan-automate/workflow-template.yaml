@@ -44,7 +44,7 @@ spec:
             echo "email: {{workflow.parameters.email}}"
             echo "scans: {{workflow.parameters.scans}}"
             # echo the first element of scans
-            echo "first scan: {{=item(0, workflow.parameters.scans)}}"
+            echo 'first scan: {{=jsonPath workflow.parameters.scans "0"}}'
 
     # - name: rustscan
     #   output:
