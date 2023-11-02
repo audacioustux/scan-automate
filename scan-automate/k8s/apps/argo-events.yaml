@@ -14,7 +14,7 @@ spec:
     server: "https://kubernetes.default.svc"
   source:
     path: scan-automate/k8s/kustomize/argo-events
-    repoURL: "https://github.com/audacioustux/fncyber"
+    repoURL: "https://github.com/audacioustux/scan-automate"
     targetRevision: HEAD
   syncPolicy:
     automated:
