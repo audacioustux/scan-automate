@@ -47,7 +47,7 @@ spec:
           - >-
             rustscan -r 1-65535 -t 5000 --accessible 
             -a {{workflow.parameters.url}} 
-            > rustscan.txt
+            > rustscan-report.txt
         volumeMounts:
           - name: workdir
             mountPath: /workdir
@@ -63,16 +63,15 @@ spec:
           - zap-report.md
         volumeMounts:
           - name: workdir
-            mountPath: /workdir
+            mountPath: /zap/wrk
     - name: print
       container:
         image: alpine
         workingDir: /workdir
         command: [sh, -c]
         args:
-          - |
-            cat rustscan.txt
-            cat zap-report.md
+          - >-
+            cat rustscan-report.txt zap-report.md
         volumeMounts:
           - name: workdir
             mountPath: /workdir
