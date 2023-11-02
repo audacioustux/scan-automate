@@ -28,13 +28,13 @@ spec:
         tasks:
           - name: rustscan
             template: rustscan
-          - name: zap
-            template: zap
-          - name: print
-            template: print
-            dependencies:
-              - rustscan
-              - zap
+          # - name: zap
+          #   template: zap
+          # - name: print
+          #   template: print
+          #   dependencies:
+          #     - rustscan
+          #     - zap
             # when rustscan is in `scans` array
             # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
     - name: rustscan
@@ -43,7 +43,7 @@ spec:
         cmd: ["/bin/sh"]
         args:
           - -c
-          - rustscan -a {{workflow.parameters.url}} --accessible > /workdir/rustscan.txt
+          - rustscan -r 1-65535 -t 5000 -a --accessible {{workflow.parameters.url}} > /workdir/rustscan.txt
     - name: zap
       container:
         image: ghcr.io/zaproxy/zaproxy:stable
