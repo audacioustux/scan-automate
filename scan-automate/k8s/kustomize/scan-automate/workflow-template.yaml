@@ -8,75 +8,102 @@ spec:
   entrypoint: scan
   artifactGC:
     strategy: OnWorkflowDeletion
-  volumeClaimTemplates:
-    - metadata:
-        name: workdir
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 256Mi
   arguments:
     parameters:
       - name: url
       - name: email
       - name: scans
+      - name: rustscan
+        value: "false"
+      - name: zap
+        value: "false"
   templates:
     - name: scan
       dag:
         tasks:
-          # - name: rustscan
-          #   template: rustscan
+          - name: echo
+            template: echo
+          - name: rustscan
+            template: rustscan
+            when: "{{workflow.parameters.rustscan}}"
           - name: zap
             template: zap
+            when: "{{workflow.parameters.zap}}"
           - name: print
             template: print
             dependencies:
-              # - rustscan
+              - rustscan
               - zap
-            # when rustscan is in `scans` array
-            # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
+    - name: echo
+      container:
+        image: alpine
+        command: [sh, -c]
+        args:
+          - |
+            echo "url: {{workflow.parameters.url}}"
+            echo "email: {{workflow.parameters.email}}"
+            echo "scans: {{workflow.parameters.scans[0]}}"
+            echo "rustscan: {{workflow.parameters.rustscan}}"
+            echo "zap: {{workflow.parameters.zap}}"
     - name: rustscan
+      output:
+        artifacts:
+          - name: rustscan-report
+            path: /tmp/rustscan-report.txt
       container:
         image: rustscan/rustscan:2.1.1
-        workingDir: /workdir
         command: ["/bin/sh"]
         args:
           - -c
           - >-
             rustscan -r 1-65535 -t 5000 --accessible 
             -a {{workflow.parameters.url}} 
-            > rustscan-report.txt
-        volumeMounts:
-          - name: workdir
-            mountPath: /workdir
+            > /tmp/rustscan-report.txt
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: 500Mi
+          requests:
+            cpu: "1"
+            memory: 1Gi
     - name: zap
+      output:
+        artifacts:
+          - name: zap-report
+            path: /tmp/zap-report.md
       container:
-        image: ghcr.io/zaproxy/zaproxy:stable
-        workingDir: /zap/wrk
-        command:
-          - zap-baseline.py
-          - -t
-          - "{{workflow.parameters.url}}"
-          - -w
-          - zap-report.md
-          - -I
-        volumeMounts:
-          - name: workdir
-            mountPath: /zap/wrk
+        image: ghcr.io/zaproxy/zaproxy:2.14.0
+        command: ["/bin/sh"]
+        args:
+          - c
+          - >-
+            mkdir -p /zap/wrk &&
+            zap-baseline.py
+            -t "{{workflow.parameters.url}}"
+            -w /tmp/zap-report.md
+            -I
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
     - name: print
+      inputs:
+        artifacts:
+          - name: rustscan-report
+            path: /tmp/rustscan-report.txt
+          - name: zap-report
+            path: /tmp/zap-report.md
       container:
         image: alpine
-        workingDir: /workdir
+        workingDir: /tmp
         command: [sh, -c]
         args:
           - |
             cat rustscan.txt
             cat zap-report.md
-        volumeMounts:
-          - name: workdir
-            mountPath: /workdir
   volumes:
     - name: docker-config
       secret:
