@@ -40,7 +40,7 @@ spec:
         command: [sh, -c]
         args:
           # first element in scans array
-          - "{{=containe(workflow.parameters.scans, 'rustscan')}}"
+          - "{{=contain(workflow.parameters.scans, 'rustscan')}}"
 
     # - name: rustscan
     #   output:
