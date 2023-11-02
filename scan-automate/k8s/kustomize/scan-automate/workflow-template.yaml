@@ -30,11 +30,11 @@ spec:
             template: rustscan
             # - name: zap
             #   template: zap
-            # - name: print
-            #   template: print
-            #   dependencies:
-            #     - rustscan
-            #     - zap
+            - name: print
+              template: print
+              dependencies:
+                - rustscan
+                # - zap
             # when rustscan is in `scans` array
             # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
     - name: rustscan
