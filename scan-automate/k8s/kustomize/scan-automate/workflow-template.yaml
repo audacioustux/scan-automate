@@ -43,13 +43,7 @@ spec:
         cmd: ["/bin/sh"]
         args:
           - -c
-          - |
-            rustscan
-            -b 1000
-            -u {{workflow.parameters.url}}
-            -a
-            --accessible
-            > /workdir/rustscan.txt
+          - rustscan -a "{{workflow.parameters.url}}" --accessible > /workdir/rustscan.txt
     - name: zap
       container:
         image: ghcr.io/zaproxy/zaproxy:stable
