@@ -54,7 +54,7 @@ spec:
     - name: zap
       container:
         image: ghcr.io/zaproxy/zaproxy:stable
-        workingDir: /workdir
+        workingDir: /zap/wrk
         command:
           - zap-full-scan.py
           - -t
