@@ -28,13 +28,13 @@ spec:
         tasks:
           - name: rustscan
             template: rustscan
-            # - name: zap
-            #   template: zap
+          - name: zap
+            template: zap
           - name: print
             template: print
             dependencies:
               - rustscan
-              # - zap
+              - zap
             # when rustscan is in `scans` array
             # when: "{{ contains(workflow.parameters.scans, 'rustscan') }}"
     - name: rustscan
@@ -44,7 +44,10 @@ spec:
         command: ["/bin/sh"]
         args:
           - -c
-          - rustscan -r 1-65535 -t 5000 --accessible -a {{workflow.parameters.url}} > rustscan.txt
+          - >-
+            rustscan -r 1-65535 -t 5000 --accessible 
+            -a {{workflow.parameters.url}} 
+            > rustscan.txt
         volumeMounts:
           - name: workdir
             mountPath: /workdir
