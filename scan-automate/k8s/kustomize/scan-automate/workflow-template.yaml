@@ -43,8 +43,6 @@ spec:
             echo "url: {{workflow.parameters.url}}"
             echo "email: {{workflow.parameters.email}}"
             echo "scans: {{workflow.parameters.scans}}"
-            echo "rustscan: {{workflow.parameters.rustscan}}"
-            echo "zap: {{workflow.parameters.zap}}"
     # - name: rustscan
     #   output:
     #     artifacts:
