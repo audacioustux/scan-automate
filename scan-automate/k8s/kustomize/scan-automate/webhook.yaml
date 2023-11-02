@@ -41,7 +41,10 @@ spec:
                   parameters:
                     - name: url
                     - name: email
-                    - name: scans
+                    - name: rustscan
+                      value: "false"
+                    - name: zap
+                      value: "false"
                 workflowTemplateRef:
                   name: scan-workflow
           parameters:
@@ -55,5 +58,9 @@ spec:
               dest: spec.arguments.parameters.1.value
             - src:
                 dependencyName: scan-workflow
-                dataKey: body.scans
+                dataKey: body.rustscan
               dest: spec.arguments.parameters.2.value
+            - src:
+                dependencyName: scan-workflow
+                dataKey: body.zap
+              dest: spec.arguments.parameters.3.value

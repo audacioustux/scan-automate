@@ -1,4 +1,7 @@
-use std::{collections::HashSet, error::Error};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+};
 
 use api::{config::CONFIG, errors::AppError, serve};
 use axum::{
@@ -43,7 +46,8 @@ async fn main() {
 struct ScanRequest {
     url: String,
     email: String,
-    scans: HashSet<String>,
+    rustscan: bool,
+    zap: bool,
 }
 
 fn get_mailer() -> SmtpTransport {

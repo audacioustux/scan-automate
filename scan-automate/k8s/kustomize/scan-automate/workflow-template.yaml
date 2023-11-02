@@ -13,94 +13,83 @@ spec:
       - name: url
       - name: email
       - name: scans
-      # - name: rustscan
-      #   value: "false"
-      # - name: zap
-      #   value: "false"
+      - name: rustscan
+      - name: zap
   templates:
     - name: scan
       dag:
         tasks:
-          - name: echo
-            template: echo
-          # - name: rustscan
-          #   template: rustscan
-          #   when: "{{workflow.parameters.rustscan}}"
-          # - name: zap
-          #   template: zap
-          #   when: "{{workflow.parameters.zap}}"
-          # - name: print
-          #   template: print
-          #   dependencies:
-          #     - rustscan
-          #     - zap
-    - name: echo
+          - name: rustscan
+            template: rustscan
+            when: "{{workflow.parameters.rustscan}}"
+          - name: zap
+            template: zap
+            when: "{{workflow.parameters.zap}}"
+          - name: print
+            template: print
+            dependencies:
+              - rustscan
+              - zap
+    - name: rustscan
+      output:
+        artifacts:
+          - name: rustscan-report
+            path: /tmp/rustscan-report.txt
+      container:
+        image: rustscan/rustscan:2.1.1
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - >-
+            rustscan -r 1-65535 -t 5000 --accessible 
+            -a {{workflow.parameters.url}} 
+            > /tmp/rustscan-report.txt
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: 500Mi
+          requests:
+            cpu: "1"
+            memory: 1Gi
+    - name: zap
+      output:
+        artifacts:
+          - name: zap-report
+            path: /tmp/zap-report.md
+      container:
+        image: ghcr.io/zaproxy/zaproxy:2.14.0
+        command: ["/bin/sh"]
+        args:
+          - c
+          - >-
+            mkdir -p /zap/wrk &&
+            zap-baseline.py
+            -t "{{workflow.parameters.url}}"
+            -w /tmp/zap-report.md
+            -I
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+    - name: print
+      inputs:
+        artifacts:
+          - name: rustscan-report
+            path: /tmp/rustscan-report.txt
+            optional: true
+          - name: zap-report
+            path: /tmp/zap-report.md
+            optional: true
       container:
         image: alpine
+        workingDir: /tmp
         command: [sh, -c]
         args:
-          # first element in scans array
-          - "{{=contain(workflow.parameters.scans, 'rustscan')}}"
-
-    # - name: rustscan
-    #   output:
-    #     artifacts:
-    #       - name: rustscan-report
-    #         path: /tmp/rustscan-report.txt
-    #   container:
-    #     image: rustscan/rustscan:2.1.1
-    #     command: ["/bin/sh"]
-    #     args:
-    #       - -c
-    #       - >-
-    #         rustscan -r 1-65535 -t 5000 --accessible 
-    #         -a {{workflow.parameters.url}} 
-    #         > /tmp/rustscan-report.txt
-    #     resources:
-    #       limits:
-    #         cpu: "0.5"
-    #         memory: 500Mi
-    #       requests:
-    #         cpu: "1"
-    #         memory: 1Gi
-    # - name: zap
-    #   output:
-    #     artifacts:
-    #       - name: zap-report
-    #         path: /tmp/zap-report.md
-    #   container:
-    #     image: ghcr.io/zaproxy/zaproxy:2.14.0
-    #     command: ["/bin/sh"]
-    #     args:
-    #       - c
-    #       - >-
-    #         mkdir -p /zap/wrk &&
-    #         zap-baseline.py
-    #         -t "{{workflow.parameters.url}}"
-    #         -w /tmp/zap-report.md
-    #         -I
-    #     resources:
-    #       limits:
-    #         cpu: "1"
-    #         memory: 1Gi
-    #       requests:
-    #         cpu: "2"
-    #         memory: 2Gi
-    # - name: print
-    #   inputs:
-    #     artifacts:
-    #       - name: rustscan-report
-    #         path: /tmp/rustscan-report.txt
-    #       - name: zap-report
-    #         path: /tmp/zap-report.md
-    #   container:
-    #     image: alpine
-    #     workingDir: /tmp
-    #     command: [sh, -c]
-    #     args:
-    #       - |
-    #         cat rustscan.txt
-    #         cat zap-report.md
+          - |
+            cat *-report.*
   volumes:
     - name: docker-config
       secret:
