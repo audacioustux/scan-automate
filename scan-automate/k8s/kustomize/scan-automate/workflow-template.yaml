@@ -13,10 +13,10 @@ spec:
       - name: url
       - name: email
       - name: scans
-      - name: rustscan
-        value: "false"
-      - name: zap
-        value: "false"
+      # - name: rustscan
+      #   value: "false"
+      # - name: zap
+      #   value: "false"
   templates:
     - name: scan
       dag:
