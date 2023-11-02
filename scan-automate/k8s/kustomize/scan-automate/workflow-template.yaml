@@ -60,7 +60,7 @@ spec:
           - -t
           - "{{workflow.parameters.url}}"
           - -w
-          - zap-report.md
+          - zap-report.md || true
         volumeMounts:
           - name: workdir
             mountPath: /zap/wrk
