@@ -39,12 +39,8 @@ spec:
         image: alpine
         command: [sh, -c]
         args:
-          - |
-            echo "url: {{workflow.parameters.url}}"
-            echo "email: {{workflow.parameters.email}}"
-            echo "scans: {{workflow.parameters.scans}}"
-            # echo the first element of scans
-            echo 'first scan: {{=jsonPath workflow.parameters.scans "0"}}'
+          # first element in scans array
+          - "{{=jsonpath `{{workflow.parameters.scans}}` `$.[0]`}}"
 
     # - name: rustscan
     #   output:
