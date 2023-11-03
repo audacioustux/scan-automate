@@ -28,6 +28,14 @@ spec:
             when: "{{workflow.parameters.zap}} == true"
           - name: print
             template: print
+            arguments:
+              artifacts:
+                - name: rustscan-report
+                  from: "{{tasks.rustscan.outputs.artifacts.rustscan-report}}"
+                  optional: true
+                - name: zap-report
+                  from: "{{tasks.zap.outputs.artifacts.zap-report}}"
+                  optional: true
             dependencies:
               - rustscan
               - zap
