@@ -95,6 +95,7 @@ spec:
     - name: gen-pdf
       container:
         image: pandoc/latex:latest
+        workingDir: /workdir
         command: ["/bin/sh"]
         args:
           - -c
