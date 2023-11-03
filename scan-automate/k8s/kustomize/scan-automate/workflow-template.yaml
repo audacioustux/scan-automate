@@ -71,7 +71,7 @@ spec:
         image: ghcr.io/zaproxy/zaproxy:2.14.0
         command: ["/bin/sh"]
         args:
-          - c
+          - -c
           - >-
             mkdir -p /zap/wrk &&
             zap-baseline.py
