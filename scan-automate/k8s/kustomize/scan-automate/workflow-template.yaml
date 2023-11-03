@@ -99,8 +99,8 @@ spec:
         args:
           - -c
           - >-
-            cat *-report.* > report.md
-            cat report.md
+            cat *-report.* > report.md &&
+            cat report.md &&
             pandoc -o report.pdf report.md
       outputs:  
         artifacts:  
