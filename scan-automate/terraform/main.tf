@@ -70,8 +70,9 @@ module "eks" {
       instance_types = ["m5.large"]
       capacity_type  = "SPOT"
 
-      min_size = 1
-      max_size = 5
+      min_size     = 1
+      max_size     = 5
+      desired_size = 1
     }
   }
 }

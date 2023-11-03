@@ -105,6 +105,15 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /workdir
+        resources:
+          limits:
+            memory: 0.5Gi
+            cpu: 0.5
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
       outputs:  
         artifacts:  
           - name: output  
@@ -113,4 +122,3 @@ spec:
     - name: docker-config
       secret:
         secretName: docker-config
-        # create docker-config secret with `kubectl create secret generic docker-config --from-file=$HOME/.docker/config.json`

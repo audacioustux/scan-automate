@@ -36,7 +36,7 @@ add-private-repos(){
 
 deploy-argocd-apps(){
     echo "Deploying argocd apps..."
-    kubectl apply --recursive -f k8s/apps
+    kubectl apply -k k8s/apps/overlays/local
 }
 
 deploy-secrets(){
@@ -44,10 +44,12 @@ deploy-secrets(){
     local git=`kubectl create secret generic git-config --from-literal=username=${GIT_USERNAME:?} --from-literal=password=${GIT_TOKEN:?} --dry-run=client -o yaml`
     local docker=`kubectl create secret generic docker-config --from-file=$HOME/.docker/config.json --dry-run=client -o yaml`
     local scan_automate_api=`kubectl create secret generic scan-automate-api --from-literal=JWT_SECRET=${JWT_SECRET:?} --from-literal=SMTP_HOST=${SMTP_HOST:?} --from-literal=SMTP_USERNAME=${SMTP_USERNAME:?} --from-literal=SMTP_PASSWORD=${SMTP_PASSWORD:?} --dry-run=client -o yaml`
+    local aws=`kubectl create secret generic aws-config --from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:?} --from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:?} --dry-run=client -o yaml`
 
     echo "$git" | kubectl apply -n argo -f -
     echo "$docker" | kubectl apply -n argo -f -
     echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
+    echo "$aws" | kubectl apply -n scan-automate -f -
 }
 
 deploy-argocd
