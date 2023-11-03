@@ -8,6 +8,15 @@ spec:
   entrypoint: scan
   artifactGC:
     strategy: OnWorkflowDeletion
+  volumeClaimTemplates:
+    - metadata:
+        name: workdir
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 256Mi
   arguments:
     parameters:
       - name: url
@@ -28,14 +37,6 @@ spec:
             when: "{{workflow.parameters.zap}} == true"
           - name: print
             template: print
-            arguments:
-              artifacts:
-                - name: rustscan-report
-                  from: "{{tasks.rustscan.outputs.artifacts.rustscan-report}}"
-                  optional: true
-                - name: zap-report
-                  from: "{{tasks.zap.outputs.artifacts.zap-report}}"
-                  optional: true
             dependencies:
               - rustscan
               - zap
@@ -50,10 +51,6 @@ spec:
             echo "rustscan: {{workflow.parameters.rustscan}}"
             echo "zap: {{workflow.parameters.zap}}"
     - name: rustscan
-      output:
-        artifacts:
-          - name: rustscan-report
-            path: /tmp/rustscan-report.txt
       container:
         image: rustscan/rustscan:2.1.1
         command: ["/bin/sh"]
@@ -62,39 +59,36 @@ spec:
           - >-
             rustscan -r 1-65535 -t 5000 --accessible 
             -a {{workflow.parameters.url}} 
-            > /tmp/rustscan-report.txt
+            > rustscan-report.txt
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
     - name: zap
-      output:
-        artifacts:
-          - name: zap-report
-            path: /zap/wrk/zap-report.md
       container:
         image: ghcr.io/zaproxy/zaproxy:2.14.0
         command: ["/bin/sh"]
         args:
           - -c
           - >-
-            mkdir -p /zap/wrk &&
             zap-baseline.py
             -t "{{workflow.parameters.url}}"
             -w zap-report.md
             -I
+        volumeMounts:
+          - name: workdir
+            mountPath: /zap/wrk
     - name: print
-      inputs:
-        artifacts:
-          - name: rustscan-report
-            path: /tmp/rustscan-report.txt
-            optional: true
-          - name: zap-report
-            path: /tmp/zap-report.md
-            optional: true
       container:
         image: alpine
-        workingDir: /tmp
         command: [sh, -c]
         args:
           - |
             cat *-report.*
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
   volumes:
     - name: docker-config
       secret:
