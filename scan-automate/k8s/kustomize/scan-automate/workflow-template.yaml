@@ -45,7 +45,6 @@ spec:
         args:
           - -c
           - >-
-            # remove http:// or https:// from url
             url=$(echo {{workflow.parameters.url}} | sed -e 's/http[s]*:\/\///g') &&
             rustscan -r 1-65535 -t 5000 --accessible 
             -a $url
