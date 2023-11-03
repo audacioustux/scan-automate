@@ -20,10 +20,11 @@ spec:
         tasks:
           - name: rustscan
             template: rustscan
-            when: "{{workflow.parameters.rustscan}}"
+            # when rustscan is "true"
+            when: "{{= workflow.parameters.rustscan == 'true' }}"
           - name: zap
             template: zap
-            when: "{{workflow.parameters.zap}}"
+            when: "{{= workflow.parameters.zap == 'true' }}"
           - name: print
             template: print
             dependencies:
