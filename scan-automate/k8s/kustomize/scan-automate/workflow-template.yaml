@@ -64,6 +64,13 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /workdir
+        resources:
+          requests:
+            memory: 0.5Gi
+            cpu: 0.5
+          limits:
+            memory: 1Gi
+            cpu: 1
     - name: zap
       container:
         image: ghcr.io/zaproxy/zaproxy:2.14.0
@@ -78,6 +85,13 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /zap/wrk
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 1
+          limits:
+            memory: 2Gi
+            cpu: 2
     - name: print
       container:
         image: alpine
