@@ -12,7 +12,6 @@ spec:
     parameters:
       - name: url
       - name: email
-      - name: scans
       - name: rustscan
       - name: zap
   templates:

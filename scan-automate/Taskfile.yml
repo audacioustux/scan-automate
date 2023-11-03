@@ -2,7 +2,6 @@ version: "3"
 
 tasks:
   default: task --list-all
-  up: ./bin/up.sh
   cf-tunnel:
     vars:
       NS: cloudflared
@@ -23,4 +22,9 @@ tasks:
     deps: 
       - api:deps
     cmd: systemfd --no-pid -s http::8080 -- cargo watch -x run
-  api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust
+  api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
+  ###
+  up: 
+    deps:
+      - api:build-image
+    cmd: ./bin/up.sh

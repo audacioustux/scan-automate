@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    error::Error,
-};
+use std::error::Error;
 
 use api::{config::CONFIG, errors::AppError, serve};
 use axum::{
