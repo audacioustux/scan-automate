@@ -18,17 +18,29 @@ spec:
     - name: scan
       dag:
         tasks:
-          - name: rustscan
-            template: rustscan
-            # when: "{{workflow.parameters.rustscan}} == true"
-          - name: zap
-            template: zap
-            # when: "{{workflow.parameters.zap}} == true"
-          - name: print
-            template: print
-            dependencies:
-              - rustscan
-              - zap
+          - name: echo
+            template: echo
+          # - name: rustscan
+          #   template: rustscan
+          #   # when: "{{workflow.parameters.rustscan}} == true"
+          # - name: zap
+          #   template: zap
+          #   # when: "{{workflow.parameters.zap}} == true"
+          # - name: print
+          #   template: print
+          #   dependencies:
+          #     - rustscan
+          #     - zap
+    - name: echo
+      container:
+        image: alpine
+        command: [sh, -c]
+        args:
+          - |
+            echo "url: {{workflow.parameters.url}}"
+            echo "email: {{workflow.parameters.email}}"
+            echo "rustscan: {{workflow.parameters.rustscan}}"
+            echo "zap: {{workflow.parameters.zap}}"
     - name: rustscan
       output:
         artifacts:
