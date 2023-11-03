@@ -27,8 +27,6 @@ spec:
     - name: scan
       dag:
         tasks:
-          - name: echo
-            template: echo
           - name: rustscan
             template: rustscan
             when: "{{workflow.parameters.rustscan}} == true"
@@ -40,16 +38,6 @@ spec:
             dependencies:
               - rustscan
               - zap
-    - name: echo
-      container:
-        image: alpine
-        command: [sh, -c]
-        args:
-          - |
-            echo "url: {{workflow.parameters.url}}"
-            echo "email: {{workflow.parameters.email}}"
-            echo "rustscan: {{workflow.parameters.rustscan}}"
-            echo "zap: {{workflow.parameters.zap}}"
     - name: rustscan
       container:
         image: rustscan/rustscan:2.1.1
@@ -57,8 +45,10 @@ spec:
         args:
           - -c
           - >-
+            # remove http:// or https:// from url
+            url=$(echo {{workflow.parameters.url}} | sed -e 's/http[s]*:\/\///g') &&
             rustscan -r 1-65535 -t 5000 --accessible 
-            -a {{workflow.parameters.url}} 
+            -a $url
             > rustscan-report.txt
         workingDir: /workdir
         volumeMounts:
