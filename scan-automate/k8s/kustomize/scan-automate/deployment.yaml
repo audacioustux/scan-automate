@@ -21,3 +21,8 @@ spec:
         envFrom:
         - secretRef:
             name: scan-automate-api
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL

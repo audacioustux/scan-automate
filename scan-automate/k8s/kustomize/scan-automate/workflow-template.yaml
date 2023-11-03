@@ -33,8 +33,8 @@ spec:
           - name: zap
             template: zap
             when: "{{workflow.parameters.zap}} == true"
-          - name: print
-            template: print
+          - name: gen-pdf
+            template: gen-pdf
             dependencies:
               - rustscan
               - zap
@@ -61,6 +61,11 @@ spec:
           limits:
             memory: 1Gi
             cpu: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
     - name: zap
       container:
         image: ghcr.io/zaproxy/zaproxy:2.14.0
@@ -82,21 +87,25 @@ spec:
           limits:
             memory: 2Gi
             cpu: 2
-    - name: print
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+    - name: gen-pdf
       container:
-        image: alpine
-        command: [sh, -c]
+        image: pandoc/core:latest
+        command: ["/bin/sh"]
         args:
-          - |
-            cat *-report.* > report.txt
-        workingDir: /workdir
-        volumeMounts:
-          - name: workdir
-            mountPath: /workdir
+          - -c
+          - >-
+            cat *-report.* > report.md
+            cat report.md
+            pandoc -o report.pdf report.md
       outputs:  
         artifacts:  
           - name: output  
-            path: /workdir/report.txt
+            path: /workdir/report.pdf
   volumes:
     - name: docker-config
       secret:
