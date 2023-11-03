@@ -63,10 +63,10 @@ spec:
             cpu: "1"
             memory: 1Gi
     - name: zap
-      # output:
-      #   artifacts:
-      #     - name: zap-report
-      #       path: /tmp/zap-report.md
+      output:
+        artifacts:
+          - name: zap-report
+            path: /tmp/zap-report.md
       container:
         image: ghcr.io/zaproxy/zaproxy:2.14.0
         command: ["/bin/sh"]
