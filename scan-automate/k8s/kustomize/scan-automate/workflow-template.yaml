@@ -94,7 +94,7 @@ spec:
               - ALL
     - name: gen-pdf
       container:
-        image: pandoc/core:latest
+        image: pandoc/latex:latest
         command: ["/bin/sh"]
         args:
           - -c
