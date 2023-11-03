@@ -20,12 +20,12 @@ spec:
         tasks:
           - name: echo
             template: echo
-          # - name: rustscan
-          #   template: rustscan
-          #   # when: "{{workflow.parameters.rustscan}} == true"
+          - name: rustscan
+            template: rustscan
+            when: "{{workflow.parameters.rustscan}} == true"
           - name: zap
             template: zap
-            # when: "{{workflow.parameters.zap}} == true"
+            when: "{{workflow.parameters.zap}} == true"
           # - name: print
           #   template: print
           #   dependencies:
@@ -55,18 +55,11 @@ spec:
             rustscan -r 1-65535 -t 5000 --accessible 
             -a {{workflow.parameters.url}} 
             > /tmp/rustscan-report.txt
-        resources:
-          limits:
-            cpu: "0.5"
-            memory: 500Mi
-          requests:
-            cpu: "1"
-            memory: 1Gi
     - name: zap
       output:
         artifacts:
           - name: zap-report
-            path: /tmp/zap-report.md
+            path: /zap/wrk/zap-report.md
       container:
         image: ghcr.io/zaproxy/zaproxy:2.14.0
         command: ["/bin/sh"]
@@ -76,15 +69,8 @@ spec:
             mkdir -p /zap/wrk &&
             zap-baseline.py
             -t "{{workflow.parameters.url}}"
-            -w /tmp/zap-report.md
+            -w zap-report.md
             -I
-        # resources:
-        #   limits:
-        #     cpu: "1"
-        #     memory: 1Gi
-        #   requests:
-        #     cpu: "2"
-        #     memory: 2Gi
     - name: print
       inputs:
         artifacts:
