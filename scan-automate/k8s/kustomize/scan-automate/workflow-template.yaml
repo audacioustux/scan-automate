@@ -95,7 +95,6 @@ spec:
     - name: gen-pdf
       container:
         image: pandoc/latex:latest
-        workingDir: /workdir
         command: ["/bin/sh"]
         args:
           - -c
@@ -103,6 +102,10 @@ spec:
             cat *-report.* > report.md &&
             cat report.md &&
             pandoc -o report.pdf report.md
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
       outputs:  
         artifacts:  
           - name: output  
