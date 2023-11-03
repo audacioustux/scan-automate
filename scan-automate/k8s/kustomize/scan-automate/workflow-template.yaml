@@ -26,11 +26,11 @@ spec:
           - name: zap
             template: zap
             when: "{{workflow.parameters.zap}} == true"
-          # - name: print
-          #   template: print
-          #   dependencies:
-          #     - rustscan
-          #     - zap
+          - name: print
+            template: print
+            dependencies:
+              - rustscan
+              - zap
     - name: echo
       container:
         image: alpine
