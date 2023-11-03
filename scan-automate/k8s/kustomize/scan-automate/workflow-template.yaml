@@ -84,11 +84,15 @@ spec:
         command: [sh, -c]
         args:
           - |
-            cat *-report.*
+            cat *-report.* > report.txt
         workingDir: /workdir
         volumeMounts:
           - name: workdir
             mountPath: /workdir
+      outputs:  
+        artifacts:  
+          - name: output  
+            path: /tmp/report.txt
   volumes:
     - name: docker-config
       secret:
