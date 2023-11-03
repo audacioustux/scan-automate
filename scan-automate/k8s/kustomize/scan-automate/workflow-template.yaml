@@ -45,8 +45,9 @@ spec:
         args:
           - -c
           - >-
+            ulimit -n 6000 &&
             url=$(echo {{workflow.parameters.url}} | sed -e 's/http[s]*:\/\///g') &&
-            rustscan -r 1-65535 -t 5000 --accessible 
+            rustscan -r 1-65535 -t 5000 -b 5000 --accessible
             -a $url
             > rustscan-report.txt
         workingDir: /workdir
