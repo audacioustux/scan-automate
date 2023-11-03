@@ -92,9 +92,7 @@ spec:
       outputs:  
         artifacts:  
           - name: output  
-            path: /tmp/report.txt
-            archive:  
-              none: { }
+            path: /workdir/report.txt
   volumes:
     - name: docker-config
       secret:
