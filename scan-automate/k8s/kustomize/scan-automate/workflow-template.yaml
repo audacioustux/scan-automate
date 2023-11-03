@@ -23,7 +23,7 @@ spec:
             when: "{{workflow.parameters.rustscan}} == true"
           - name: zap
             template: zap
-            when: "{{workflow.parameters.zap}} == true"
+            # when: "{{workflow.parameters.zap}} == true"
           - name: print
             template: print
             dependencies:
