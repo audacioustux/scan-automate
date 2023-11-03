@@ -48,7 +48,7 @@ spec:
             ulimit -n 5100 &&
             url=$(echo {{workflow.parameters.url}} | sed -e 's/http[s]*:\/\///g') &&
             rustscan -r 1-65535 -t 5000 -b 5000 --accessible
-            -a $url
+            -a $url | sed 's/$/  /'
             > rustscan-report.txt
         workingDir: /workdir
         volumeMounts:
@@ -100,7 +100,6 @@ spec:
           - -c
           - >-
             cat *-report.* > report.md &&
-            cat report.md &&
             pandoc -o report.pdf report.md
         workingDir: /workdir
         volumeMounts:
