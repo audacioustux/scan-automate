@@ -6,10 +6,19 @@ tasks:
   argo:port-forward: kubectl port-forward -n argo svc/argo-server 2746:2746
   argocd:password: echo "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)"
   argocd:port-forward: kubectl port-forward svc/argocd-server -n argocd 8080:443
-  update-kubeconfig:
+  terraform:init:
+    dir: terraform
+    cmd: terraform init
+  eks:up:
+    deps:
+      - terraform:init
+    dir: terraform
+    cmd: terraform apply 
+  eks:update-kubeconfig:
     dir: terraform
     cmd: aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
   ###
+  api:port-forward: kubectl port-forward svc/scan-automate -n scan-automate 4000:80
   api:deps: cargo install systemfd cargo-watch
   api:dev:
     dir: crates/api
@@ -19,6 +28,4 @@ tasks:
   api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
   ###
   up: 
-    deps:
-      - api:build-image
     cmd: ./bin/up.sh

@@ -2,19 +2,7 @@ services:
   devcontainer:
     build:
       context: .
-    environment:
-      - GIT_USERNAME
-      - GIT_TOKEN
-      - DOCKER_USERNAME
-      - DOCKER_TOKEN
-      - CLOUDFLARE_TUNNEL_TOKEN
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
-      - AWS_REGION
-      - SMTP_HOST
-      - SMTP_USERNAME
-      - SMTP_PASSWORD
-      - JWT_SECRET
+    env_file: .env
     volumes:
       - ../..:/workspaces:rw,cached
     init: true

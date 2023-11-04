@@ -3,7 +3,7 @@ use std::error::Error;
 use api::{config::CONFIG, errors::AppError, serve};
 use axum::{
     extract::{Path, State},
-    http::{header, HeaderValue, Method, StatusCode},
+    http::{header, HeaderValue, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -19,7 +19,7 @@ use lettre::{
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
@@ -32,7 +32,7 @@ async fn main() {
             CorsLayer::new()
                 .allow_origin("*".parse::<HeaderValue>().unwrap())
                 .allow_headers(vec![header::CONTENT_TYPE])
-                .allow_methods([Method::GET]),
+                .allow_methods(Any),
         )
         .with_state(client);
 
@@ -85,12 +85,12 @@ async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, A
     let token = create_scan_request_token(&req)?;
     let body = format!(
         r#"
-            Hi,
+        Hi,
 
-            Please confirm your scan request by clicking the link below:
+        Please confirm your scan request by clicking the link below:
 
-            http://localhost:4000/scans/confirm/{}
-            "#,
+        http://localhost:4000/scans/confirm/{}
+        "#,
         token
     );
 
