@@ -33,7 +33,8 @@ spec:
           #   when: "{{workflow.parameters.rustscan}}"
           - name: zap
             template: zap
-            # when: "{{workflow.parameters.zap}} != ''"
+            # if not empty string, check with regex
+            when: "{{workflow.parameters.zap}} !~ '^\\s+$'"
           # - name: gen-pdf
           #   template: gen-pdf
           #   dependencies:
