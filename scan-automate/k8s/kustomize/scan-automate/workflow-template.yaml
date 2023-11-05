@@ -21,9 +21,7 @@ spec:
     parameters:
       - name: email
       - name: rustscan
-        value: "false"
       - name: zap
-        value: "false"
   templates:
     - name: scan
       dag:
@@ -35,7 +33,7 @@ spec:
           #   when: "{{workflow.parameters.rustscan}}"
           - name: zap
             template: zap
-            when: "{{=jsonpath(workflow.parameters.zap, '$.uri')}}"
+            when: "{{workflow.parameters.zap}} != ''"
           # - name: gen-pdf
           #   template: gen-pdf
           #   dependencies:
@@ -50,7 +48,7 @@ spec:
           - |
             echo "{{workflow.parameters.email}}"
             echo "{{workflow.parameters.rustscan}}"
-            echo "{{workflow.parameters.zap}}"
+            echo "{{inputs.parameters.zap}}"
     # - name: rustscan
     #   container:
     #     image: rustscan/rustscan:2.1.1
