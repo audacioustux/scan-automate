@@ -50,7 +50,7 @@ spec:
             echo "{{workflow.parameters.email}}"
             echo "{{workflow.parameters.rustscan}}"
             echo "{{workflow.parameters.zap}}"
-            echo "{{workflow.parameters.zap}}" | wc
+            echo "{{workflow.parameters.rustscan}}" | wc
 
     # - name: rustscan
     #   container:
