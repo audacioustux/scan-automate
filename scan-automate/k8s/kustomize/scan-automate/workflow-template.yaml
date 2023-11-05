@@ -28,17 +28,17 @@ spec:
         tasks:
           - name: echo
             template: echo
-          - name: rustscan
-            template: rustscan
-            when: "{{workflow.parameters.rustscan}} == true"
-          - name: zap
-            template: zap
-            when: "{{workflow.parameters.zap}} == true"
-          - name: gen-pdf
-            template: gen-pdf
-            dependencies:
-              - rustscan
-              - zap
+          # - name: rustscan
+          #   template: rustscan
+          #   when: "{{workflow.parameters.rustscan}} == true"
+          # - name: zap
+          #   template: zap
+          #   when: "{{workflow.parameters.zap}} == true"
+          # - name: gen-pdf
+          #   template: gen-pdf
+          #   dependencies:
+          #     - rustscan
+          #     - zap
     - name: echo
       container:
         image: alpine:latest
