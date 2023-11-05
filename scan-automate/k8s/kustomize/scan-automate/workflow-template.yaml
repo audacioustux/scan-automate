@@ -34,7 +34,7 @@ spec:
           - name: zap
             template: zap
             # if not empty string, check with regex
-            when: "{{workflow.parameters.zap}} !~ '^$'"
+            when: "{{=workflow.parameters.zap != ''}}"
           # - name: gen-pdf
           #   template: gen-pdf
           #   dependencies:
