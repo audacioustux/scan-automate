@@ -46,95 +46,94 @@ spec:
         args:
           - -c
           - |
-            # echo email
             echo "{{workflow.parameters.email}}"
             echo "{{workflow.parameters.rustscan}}"
-            echo "{{workflow.parameters.zap}}"
-    - name: rustscan
-      container:
-        image: rustscan/rustscan:2.1.1
-        command: ["/bin/sh"]
-        args:
-          - -c
-          - |
-            set -eax
-            # set explicit ulimit
-            ulimit -n 5100
-            # canonicalize url
-            uri=$(echo {{workflow.parameters.rustscan.uri}} | sed -e 's/http[s]*:\/\///g')
-            # run rustscan
-            # , add two spaces to the end of each line to prevent pandoc from interpreting the markdown
-            rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
-        workingDir: /workdir
-        volumeMounts:
-          - name: workdir
-            mountPath: /workdir
-        resources:
-          requests:
-            memory: 0.5Gi
-            cpu: 0.5
-          limits:
-            memory: 1Gi
-            cpu: 1
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-    - name: zap
-      container:
-        image: ghcr.io/zaproxy/zaproxy:2.14.0
-        command: ["/bin/sh"]
-        args:
-          - -c
-          - |
-            # run zap-baseline
-            zap-baseline.py -t "{{workflow.parameters.zap.uri}}" -w zap-report.md -I
-        volumeMounts:
-          - name: workdir
-            mountPath: /zap/wrk
-        resources:
-          requests:
-            memory: 1Gi
-            cpu: 1
-          limits:
-            memory: 2Gi
-            cpu: 2
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-    - name: gen-pdf
-      container:
-        image: pandoc/latex:latest
-        command: ["/bin/sh"]
-        args:
-          - -c
-          - |
-            # concatenate reports
-            cat *-report.* > report.md
-            # whitelabel report
-            sed -i 's/Zap/Fncyber/g' report.md
-            # generate pdf
-            pandoc -o report.pdf report.md
-        workingDir: /workdir
-        volumeMounts:
-          - name: workdir
-            mountPath: /workdir
-        resources:
-          limits:
-            memory: 0.5Gi
-            cpu: 0.5
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-      outputs:
-        artifacts:
-          - name: output
-            path: /workdir/report.pdf
+            echo "{{workflow.parameters.zap.uri}}"
+    # - name: rustscan
+    #   container:
+    #     image: rustscan/rustscan:2.1.1
+    #     command: ["/bin/sh"]
+    #     args:
+    #       - -c
+    #       - |
+    #         set -eax
+    #         # set explicit ulimit
+    #         ulimit -n 5100
+    #         # canonicalize url
+    #         uri=$(echo {{workflow.parameters.rustscan.uri}} | sed -e 's/http[s]*:\/\///g')
+    #         # run rustscan
+    #         # , add two spaces to the end of each line to prevent pandoc from interpreting the markdown
+    #         rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
+    #     workingDir: /workdir
+    #     volumeMounts:
+    #       - name: workdir
+    #         mountPath: /workdir
+    #     resources:
+    #       requests:
+    #         memory: 0.5Gi
+    #         cpu: 0.5
+    #       limits:
+    #         memory: 1Gi
+    #         cpu: 1
+    #     securityContext:
+    #       allowPrivilegeEscalation: false
+    #       capabilities:
+    #         drop:
+    #           - ALL
+    # - name: zap
+    #   container:
+    #     image: ghcr.io/zaproxy/zaproxy:2.14.0
+    #     command: ["/bin/sh"]
+    #     args:
+    #       - -c
+    #       - |
+    #         # run zap-baseline
+    #         zap-baseline.py -t "{{workflow.parameters.zap.uri}}" -w zap-report.md -I
+    #     volumeMounts:
+    #       - name: workdir
+    #         mountPath: /zap/wrk
+    #     resources:
+    #       requests:
+    #         memory: 1Gi
+    #         cpu: 1
+    #       limits:
+    #         memory: 2Gi
+    #         cpu: 2
+    #     securityContext:
+    #       allowPrivilegeEscalation: false
+    #       capabilities:
+    #         drop:
+    #           - ALL
+    # - name: gen-pdf
+    #   container:
+    #     image: pandoc/latex:latest
+    #     command: ["/bin/sh"]
+    #     args:
+    #       - -c
+    #       - |
+    #         # concatenate reports
+    #         cat *-report.* > report.md
+    #         # whitelabel report
+    #         sed -i 's/Zap/Fncyber/g' report.md
+    #         # generate pdf
+    #         pandoc -o report.pdf report.md
+    #     workingDir: /workdir
+    #     volumeMounts:
+    #       - name: workdir
+    #         mountPath: /workdir
+    #     resources:
+    #       limits:
+    #         memory: 0.5Gi
+    #         cpu: 0.5
+    #     securityContext:
+    #       allowPrivilegeEscalation: false
+    #       capabilities:
+    #         drop:
+    #           - ALL
+    #   outputs:
+    #     artifacts:
+    #       - name: output
+    #         path: /workdir/report.pdf
   volumes:
     - name: docker-config
       secret:
