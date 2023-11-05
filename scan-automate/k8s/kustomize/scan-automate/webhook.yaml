@@ -34,7 +34,6 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: scan-
                 namespace: argo
               spec:
                 arguments:
@@ -57,3 +56,7 @@ spec:
                 dependencyName: scan-workflow
                 dataKey: body.zap
               dest: spec.arguments.parameters.2.value
+            - src:
+                dependencyName: scan-workflow
+                dataTemplate: "scan-{{ .Input.body.id }}"
+              dest: metadata.name
