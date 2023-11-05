@@ -40,11 +40,21 @@ async fn main() {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+struct RustscanConfig {
+    uri: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ZapConfig {
+    uri: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 struct ScanRequest {
-    url: String,
+    id: Option<uuid::Uuid>,
     email: String,
-    rustscan: bool,
-    zap: bool,
+    rustscan: Option<RustscanConfig>,
+    zap: Option<ZapConfig>,
 }
 
 fn get_mailer() -> SmtpTransport {
@@ -82,6 +92,13 @@ fn create_scan_request_token(req: &ScanRequest) -> Result<String, impl Error> {
 }
 
 async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, AppError> {
+    let req = ScanRequest {
+        id: req.id.or(Some(uuid::Uuid::new_v4())),
+        ..req
+    };
+
+    dbg!(&req);
+
     let token = create_scan_request_token(&req)?;
     let body = format!(
         r#"

@@ -6,4 +6,3 @@ resources:
 - cert-manager.yaml
 - openvasd.yaml
 - scan-automate.yaml
-- traefik.yaml

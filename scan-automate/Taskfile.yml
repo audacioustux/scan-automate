@@ -24,7 +24,7 @@ tasks:
     dir: crates/api
     deps: 
       - api:deps
-    cmd: systemfd --no-pid -s http::8080 -- cargo watch -x run
+    cmd: systemfd --no-pid -s http::4000 -- cargo watch -x run
   api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
   ###
   up: 

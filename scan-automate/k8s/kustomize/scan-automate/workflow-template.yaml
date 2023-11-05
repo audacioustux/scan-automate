@@ -44,12 +44,15 @@ spec:
         command: ["/bin/sh"]
         args:
           - -c
-          - >-
-            ulimit -n 5100 &&
-            url=$(echo {{workflow.parameters.url}} | sed -e 's/http[s]*:\/\///g') &&
-            rustscan -r 1-65535 -t 5000 -b 5000 --accessible
-            -a $url | sed 's/$/  /'
-            > rustscan-report.txt
+          - |
+            set -eax
+            # set explicit ulimit
+            ulimit -n 5100
+            # canonicalize url
+            uri=$(echo {{workflow.parameters.url}} | sed -e 's/http[s]*:\/\///g')
+            # run rustscan
+            # , add two spaces to the end of each line to prevent pandoc from interpreting the markdown
+            rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
         workingDir: /workdir
         volumeMounts:
           - name: workdir
@@ -72,11 +75,9 @@ spec:
         command: ["/bin/sh"]
         args:
           - -c
-          - >-
-            zap-baseline.py
-            -t "{{workflow.parameters.url}}"
-            -w zap-report.md
-            -I
+          - |
+            # run zap-baseline
+            zap-baseline.py -t "{{workflow.parameters.url}}" -w zap-report.md -I
         volumeMounts:
           - name: workdir
             mountPath: /zap/wrk
@@ -98,8 +99,12 @@ spec:
         command: ["/bin/sh"]
         args:
           - -c
-          - >-
-            cat *-report.* > report.md &&
+          - |
+            # concatenate reports
+            cat *-report.* > report.md
+            # whitelabel report
+            sed -i 's/Zap/Fncyber/g' report.md
+            # generate pdf
             pandoc -o report.pdf report.md
         workingDir: /workdir
         volumeMounts:
