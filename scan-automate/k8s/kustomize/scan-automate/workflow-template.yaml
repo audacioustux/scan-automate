@@ -26,29 +26,29 @@ spec:
     - name: scan
       dag:
         tasks:
-          # - name: echo
-          #   template: echo
+          - name: echo
+            template: echo
           # - name: rustscan
           #   template: rustscan
           #   when: "{{workflow.parameters.rustscan}}"
           - name: zap
             template: zap
-            when: "{{workflow.parameters.zap}}"
+            when: "{{workflow.parameters.zap}} != null"
           # - name: gen-pdf
           #   template: gen-pdf
           #   dependencies:
           #     - rustscan
           #     - zap
-    # - name: echo
-    #   container:
-    #     image: alpine:latest
-    #     command: ["/bin/sh"]
-    #     args:
-    #       - -c
-    #       - |
-    #         echo "{{workflow.parameters.email}}"
-    #         echo "{{workflow.parameters.rustscan}}"
-    #         echo "{{inputs.parameters.a}}"
+    - name: echo
+      container:
+        image: alpine:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            echo "{{workflow.parameters.email}}"
+            echo "{{workflow.parameters.rustscan}}"
+            echo "{{inputs.parameters.zap}}"
     # - name: rustscan
     #   container:
     #     image: rustscan/rustscan:2.1.1
