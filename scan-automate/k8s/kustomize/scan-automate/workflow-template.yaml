@@ -40,6 +40,10 @@ spec:
           #     - rustscan
           #     - zap
     - name: echo
+      inputs:
+        parameters:
+          - name: a
+            value: "{{=jsonpath(workflow.parameters.zap, '$.uri')}}"
       container:
         image: alpine:latest
         command: ["/bin/sh"]
@@ -48,7 +52,7 @@ spec:
           - |
             echo "{{workflow.parameters.email}}"
             echo "{{workflow.parameters.rustscan}}"
-            echo "{{=jsonpath(workflow.parameters.config, '$.uri')}}"
+            echo "{{inputs.parameters.a}}"
     # - name: rustscan
     #   container:
     #     image: rustscan/rustscan:2.1.1
