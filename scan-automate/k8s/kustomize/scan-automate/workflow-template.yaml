@@ -28,12 +28,11 @@ spec:
         tasks:
           - name: echo
             template: echo
-          # - name: rustscan
-          #   template: rustscan
-          #   when: "{{workflow.parameters.rustscan}}"
+          - name: rustscan
+            template: rustscan
+            when: "{{=workflow.parameters.rustscan != ''}}"
           - name: zap
             template: zap
-            # if not empty string, check with regex
             when: "{{=workflow.parameters.zap != ''}}"
           # - name: gen-pdf
           #   template: gen-pdf
@@ -52,37 +51,41 @@ spec:
             echo "{{workflow.parameters.zap}}"
             echo "{{workflow.parameters.rustscan}}" | wc
 
-    # - name: rustscan
-    #   container:
-    #     image: rustscan/rustscan:2.1.1
-    #     command: ["/bin/sh"]
-    #     args:
-    #       - -c
-    #       - |
-    #         set -eax
-    #         # set explicit ulimit
-    #         ulimit -n 5100
-    #         # canonicalize url
-    #         uri=$(echo {{workflow.parameters.rustscan.uri}} | sed -e 's/http[s]*:\/\///g')
-    #         # run rustscan
-    #         # , add two spaces to the end of each line to prevent pandoc from interpreting the markdown
-    #         rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
-    #     workingDir: /workdir
-    #     volumeMounts:
-    #       - name: workdir
-    #         mountPath: /workdir
-    #     resources:
-    #       requests:
-    #         memory: 0.5Gi
-    #         cpu: 0.5
-    #       limits:
-    #         memory: 1Gi
-    #         cpu: 1
-    #     securityContext:
-    #       allowPrivilegeEscalation: false
-    #       capabilities:
-    #         drop:
-    #           - ALL
+    - name: rustscan
+      inputs:
+        parameters:
+          - name: uri
+            value: "{{=jsonpath(workflow.parameters.rustscan, '$.uri')}}"
+      container:
+        image: rustscan/rustscan:2.1.1
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            set -eax
+            # set explicit ulimit
+            ulimit -n 5100
+            # canonicalize url
+            uri=$(echo {{inputs.parameters.uri}} | sed -e 's/http[s]*:\/\///g')
+            # run rustscan
+            # , add two spaces to the end of each line to prevent pandoc from interpreting the markdown
+            rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
+        resources:
+          requests:
+            memory: 0.5Gi
+            cpu: 0.5
+          limits:
+            memory: 1Gi
+            cpu: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
     - name: zap
       inputs:
         parameters:
