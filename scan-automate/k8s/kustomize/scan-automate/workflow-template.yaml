@@ -26,31 +26,17 @@ spec:
     - name: scan
       dag:
         tasks:
-          - name: echo
-            template: echo
           - name: rustscan
             template: rustscan
             when: "{{=workflow.parameters.rustscan != ''}}"
           - name: zap
             template: zap
             when: "{{=workflow.parameters.zap != ''}}"
-          # - name: gen-pdf
-          #   template: gen-pdf
-          #   dependencies:
-          #     - rustscan
-          #     - zap
-    - name: echo
-      container:
-        image: alpine:latest
-        command: ["/bin/sh"]
-        args:
-          - -c
-          - |
-            echo "{{workflow.parameters.email}}"
-            echo "{{workflow.parameters.rustscan}}"
-            echo "{{workflow.parameters.zap}}"
-            echo "{{workflow.parameters.rustscan}}" | wc
-
+          - name: gen-pdf
+            template: gen-pdf
+            dependencies:
+              - rustscan
+              - zap
     - name: rustscan
       inputs:
         parameters:
@@ -114,36 +100,36 @@ spec:
           capabilities:
             drop:
               - ALL
-    # - name: gen-pdf
-    #   container:
-    #     image: pandoc/latex:latest
-    #     command: ["/bin/sh"]
-    #     args:
-    #       - -c
-    #       - |
-    #         # concatenate reports
-    #         cat *-report.* > report.md
-    #         # whitelabel report
-    #         sed -i 's/Zap/Fncyber/g' report.md
-    #         # generate pdf
-    #         pandoc -o report.pdf report.md
-    #     workingDir: /workdir
-    #     volumeMounts:
-    #       - name: workdir
-    #         mountPath: /workdir
-    #     resources:
-    #       limits:
-    #         memory: 0.5Gi
-    #         cpu: 0.5
-    #     securityContext:
-    #       allowPrivilegeEscalation: false
-    #       capabilities:
-    #         drop:
-    #           - ALL
-    #   outputs:
-    #     artifacts:
-    #       - name: output
-    #         path: /workdir/report.pdf
+    - name: gen-pdf
+      container:
+        image: pandoc/latex:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            # concatenate reports
+            cat *-report.* > report.md
+            # whitelabel report
+            sed -i 's/Zap/Fncyber/g' report.md
+            # generate pdf
+            pandoc -o report.pdf report.md
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
+        resources:
+          limits:
+            memory: 0.5Gi
+            cpu: 0.5
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      outputs:
+        artifacts:
+          - name: output
+            path: /workdir/report.pdf
   volumes:
     - name: docker-config
       secret:
