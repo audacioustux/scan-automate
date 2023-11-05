@@ -26,33 +26,29 @@ spec:
     - name: scan
       dag:
         tasks:
-          - name: echo
-            template: echo
+          # - name: echo
+          #   template: echo
           # - name: rustscan
           #   template: rustscan
           #   when: "{{workflow.parameters.rustscan}}"
-          # - name: zap
-          #   template: zap
-          #   when: "{{workflow.parameters.zap}}"
+          - name: zap
+            template: zap
+            when: "{{workflow.parameters.zap}}"
           # - name: gen-pdf
           #   template: gen-pdf
           #   dependencies:
           #     - rustscan
           #     - zap
-    - name: echo
-      inputs:
-        parameters:
-          - name: a
-            value: "{{=jsonpath(workflow.parameters.zap, '$.uri')}}"
-      container:
-        image: alpine:latest
-        command: ["/bin/sh"]
-        args:
-          - -c
-          - |
-            echo "{{workflow.parameters.email}}"
-            echo "{{workflow.parameters.rustscan}}"
-            echo "{{inputs.parameters.a}}"
+    # - name: echo
+    #   container:
+    #     image: alpine:latest
+    #     command: ["/bin/sh"]
+    #     args:
+    #       - -c
+    #       - |
+    #         echo "{{workflow.parameters.email}}"
+    #         echo "{{workflow.parameters.rustscan}}"
+    #         echo "{{inputs.parameters.a}}"
     # - name: rustscan
     #   container:
     #     image: rustscan/rustscan:2.1.1
@@ -84,30 +80,34 @@ spec:
     #       capabilities:
     #         drop:
     #           - ALL
-    # - name: zap
-    #   container:
-    #     image: ghcr.io/zaproxy/zaproxy:2.14.0
-    #     command: ["/bin/sh"]
-    #     args:
-    #       - -c
-    #       - |
-    #         # run zap-baseline
-    #         zap-baseline.py -t "{{workflow.parameters.zap.uri}}" -w zap-report.md -I
-    #     volumeMounts:
-    #       - name: workdir
-    #         mountPath: /zap/wrk
-    #     resources:
-    #       requests:
-    #         memory: 1Gi
-    #         cpu: 1
-    #       limits:
-    #         memory: 2Gi
-    #         cpu: 2
-    #     securityContext:
-    #       allowPrivilegeEscalation: false
-    #       capabilities:
-    #         drop:
-    #           - ALL
+    - name: zap
+      inputs:
+        parameters:
+          - name: uri
+            value: "{{=jsonpath(workflow.parameters.zap, '$.uri')}}"
+      container:
+        image: ghcr.io/zaproxy/zaproxy:2.14.0
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            # run zap-baseline
+            zap-baseline.py -t "{{inputs.parameters.uri}}" -w zap-report.md -I
+        volumeMounts:
+          - name: workdir
+            mountPath: /zap/wrk
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 1
+          limits:
+            memory: 2Gi
+            cpu: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
     # - name: gen-pdf
     #   container:
     #     image: pandoc/latex:latest
