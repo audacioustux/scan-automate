@@ -17,6 +17,7 @@ use lettre::{
     SmtpTransport, Transport,
 };
 use nanoid::nanoid;
+use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -29,6 +30,7 @@ async fn main() {
     let app = Router::new()
         .route("/scans", post(scans_post))
         .route("/scans/confirm/:token", get(scans_confirm))
+        .route("/scans/progress/:id", get(scans_progress))
         .layer(
             CorsLayer::new()
                 .allow_origin("*".parse::<HeaderValue>().unwrap())
@@ -96,14 +98,15 @@ fn create_scan_request_token(req: &ScanRequest) -> Result<String, impl Error> {
 }
 
 async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, AppError> {
-    let valid_pod_name_chars: Vec<char> = ('a'..='z').chain('0'..='9').collect();
+    let id: Lazy<String> = Lazy::new(|| {
+        let valid_pod_name_chars: Vec<char> = ('a'..='z').chain('0'..='9').collect();
+        nanoid!(10, &valid_pod_name_chars)
+    });
 
     let req = ScanRequest {
-        id: req.id.or(Some(ScanID(nanoid!(10, &valid_pod_name_chars)))),
+        id: req.id.or(Some(ScanID(id.to_string()))),
         ..req
     };
-
-    dbg!(&req);
 
     let token = create_scan_request_token(&req)?;
     let body = format!(
@@ -126,7 +129,7 @@ async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, A
 
     get_mailer().send(&email)?;
 
-    Ok((StatusCode::OK, Json(json!({ "status": "ok" }))))
+    Ok((StatusCode::OK, Json(req.id)))
 }
 
 fn validate_scan_request_token(
@@ -153,5 +156,17 @@ async fn scans_confirm(
         .send()
         .await?;
 
-    Ok((StatusCode::OK, Json(json!({ "status": "ok" }))))
+    Ok(StatusCode::OK)
+}
+
+async fn scans_progress(
+    Path(id): Path<String>,
+    State(client): State<Client>,
+) -> Result<impl IntoResponse, AppError> {
+    let _res = client
+        .get(&format!("{}/scans/{}", CONFIG.scan_webhook_url, id))
+        .send()
+        .await?;
+
+    Ok(StatusCode::OK)
 }

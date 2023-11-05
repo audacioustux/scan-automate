@@ -21,6 +21,14 @@ pub struct Config {
         default_value = "http://scan-workflow-eventsource-svc.argo-events.svc.cluster.local:8082/"
     )]
     pub scan_webhook_url: String,
+    #[clap(
+        long,
+        env,
+        default_value = "https://argo-server.argo.svc.cluster.local:2746/"
+    )]
+    pub argo_workflow_url: String,
+    #[clap(long, env)]
+    pub argo_workflow_token: String,
 }
 
 pub static CONFIG: Lazy<Config> = Lazy::new(Config::parse);
