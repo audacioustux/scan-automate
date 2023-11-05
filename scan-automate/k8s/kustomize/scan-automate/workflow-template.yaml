@@ -33,7 +33,7 @@ spec:
           #   when: "{{workflow.parameters.rustscan}}"
           - name: zap
             template: zap
-            when: "{{workflow.parameters.zap}} != ''"
+            # when: "{{workflow.parameters.zap}} != ''"
           # - name: gen-pdf
           #   template: gen-pdf
           #   dependencies:
