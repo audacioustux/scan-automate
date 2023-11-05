@@ -16,6 +16,7 @@ use lettre::{
     message::header::ContentType, transport::smtp::authentication::Credentials, Message,
     SmtpTransport, Transport,
 };
+use nanoid::nanoid;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -50,8 +51,11 @@ struct ZapConfig {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+struct ScanID(String);
+
+#[derive(Debug, Deserialize, Serialize)]
 struct ScanRequest {
-    id: Option<uuid::Uuid>,
+    id: Option<ScanID>,
     email: String,
     rustscan: Option<RustscanConfig>,
     zap: Option<ZapConfig>,
@@ -92,8 +96,10 @@ fn create_scan_request_token(req: &ScanRequest) -> Result<String, impl Error> {
 }
 
 async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, AppError> {
+    let valid_pod_name_chars: Vec<char> = ('a'..='z').chain('0'..='9').collect();
+
     let req = ScanRequest {
-        id: req.id.or(Some(uuid::Uuid::new_v4())),
+        id: req.id.or(Some(ScanID(nanoid!(10, &valid_pod_name_chars)))),
         ..req
     };
 
