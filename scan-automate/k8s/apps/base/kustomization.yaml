@@ -4,5 +4,4 @@ resources:
 - argo-events.yaml
 - argo-workflows.yaml
 - cert-manager.yaml
-- openvasd.yaml
 - scan-automate.yaml

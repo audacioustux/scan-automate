@@ -12,17 +12,17 @@ spec:
         app: scan-automate
     spec:
       containers:
-      - name: scan-automate
-        image: scan-automate-api
-        imagePullPolicy: Never
-        ports:
-        - name: http
-          containerPort: 4000
-        envFrom:
-        - secretRef:
-            name: scan-automate-api
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
+        - name: scan-automate
+          image: scan-automate-api
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 4000
+          envFrom:
+            - secretRef:
+                name: scan-automate-api
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

@@ -33,7 +33,7 @@ async fn html() -> impl IntoResponse {
             // submit the form
             async function submit() {
                 // send a post request to the api
-                const res = await fetch("http://localhost:3000/scans", {
+                const res = await fetch("http://localhost:4000/scans", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -71,7 +71,7 @@ async fn html() -> impl IntoResponse {
             // get the progress of the scan
             async function progress() {
                 // send a get request to the api
-                const res = await fetch(`http://localhost:3000/scans/progress/${scanId.value}`);
+                const res = await fetch(`http://localhost:4000/scans/progress/${scanId.value}`);
                 // get the response from the api
                 const data = await res.json();
                 // print the response

@@ -4,7 +4,6 @@ use api::{config::CONFIG, errors::AppError, serve};
 use axum::{
     extract::{Path, State},
     http::{header, HeaderValue, StatusCode},
-    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
@@ -17,15 +16,17 @@ use lettre::{
     SmtpTransport, Transport,
 };
 use nanoid::nanoid;
-use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
-    let client = Client::new();
+    let client = Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap();
 
     let app = Router::new()
         .route("/scans", post(scans_post))
@@ -57,10 +58,15 @@ struct ScanID(String);
 
 #[derive(Debug, Deserialize, Serialize)]
 struct ScanRequest {
-    id: Option<ScanID>,
     email: String,
     rustscan: Option<RustscanConfig>,
     zap: Option<ZapConfig>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ScanInstance {
+    id: ScanID,
+    req: ScanRequest,
 }
 
 fn get_mailer() -> SmtpTransport {
@@ -82,7 +88,7 @@ struct JWTClaims<T> {
     exp: i64,
 }
 
-fn create_scan_request_token(req: &ScanRequest) -> Result<String, impl Error> {
+fn create_scan_request_token(req: &ScanInstance) -> Result<String, impl Error> {
     let exp = Utc::now()
         .checked_add_signed(Duration::days(1))
         .unwrap()
@@ -97,18 +103,15 @@ fn create_scan_request_token(req: &ScanRequest) -> Result<String, impl Error> {
     )
 }
 
-async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, AppError> {
-    let id: Lazy<String> = Lazy::new(|| {
+async fn scans_post(Json(req): Json<ScanRequest>) -> ApiResponse<ScanID> {
+    let id = {
         let valid_pod_name_chars: Vec<char> = ('a'..='z').chain('0'..='9').collect();
-        nanoid!(10, &valid_pod_name_chars)
-    });
-
-    let req = ScanRequest {
-        id: req.id.or(Some(ScanID(id.to_string()))),
-        ..req
+        ScanID(nanoid!(10, &valid_pod_name_chars))
     };
 
-    let token = create_scan_request_token(&req)?;
+    let instance = ScanInstance { id, req };
+
+    let token = create_scan_request_token(&instance)?;
     let body = format!(
         r#"
         Hi,
@@ -122,33 +125,25 @@ async fn scans_post(Json(req): Json<ScanRequest>) -> Result<impl IntoResponse, A
 
     let email = Message::builder()
         .from(CONFIG.email_from.parse()?)
-        .to(req.email.parse()?)
+        .to(instance.req.email.parse()?)
         .subject("Confirm Scan Request")
         .header(ContentType::TEXT_PLAIN)
         .body(body)?;
 
     get_mailer().send(&email)?;
 
-    Ok((StatusCode::OK, Json(req.id)))
-}
-
-fn validate_scan_request_token(
-    token: &str,
-) -> Result<TokenData<JWTClaims<ScanRequest>>, impl Error> {
-    let validation = Validation::new(Algorithm::HS256);
-
-    decode(
-        &token,
-        &DecodingKey::from_secret(CONFIG.jwt_secret.as_ref()),
-        &validation,
-    )
+    Ok((StatusCode::OK, Json(instance.id)))
 }
 
 async fn scans_confirm(
     Path(token): Path<String>,
     State(client): State<Client>,
-) -> Result<impl IntoResponse, AppError> {
-    let TokenData { claims, .. } = validate_scan_request_token(&token)?;
+) -> ApiResponse<Value> {
+    let TokenData { claims, .. } = decode::<JWTClaims<ScanRequest>>(
+        &token,
+        &DecodingKey::from_secret(CONFIG.jwt_secret.as_ref()),
+        &Validation::new(Algorithm::HS256),
+    )?;
 
     client
         .post(&CONFIG.scan_webhook_url)
@@ -156,17 +151,25 @@ async fn scans_confirm(
         .send()
         .await?;
 
-    Ok(StatusCode::OK)
+    Ok((StatusCode::OK, Json(json!("ok"))))
 }
 
 async fn scans_progress(
     Path(id): Path<String>,
     State(client): State<Client>,
-) -> Result<impl IntoResponse, AppError> {
-    let _res = client
-        .get(&format!("{}/scans/{}", CONFIG.scan_webhook_url, id))
+) -> ApiResponse<Value> {
+    let res: serde_json::Value = client
+        .get(&format!(
+            "https://{}/api/v1/workflows/argo/scan-{}",
+            CONFIG.argo_workflow_host, id
+        ))
+        .header("Authorization", &CONFIG.argo_workflow_token)
         .send()
+        .await?
+        .json()
         .await?;
 
-    Ok(StatusCode::OK)
+    Ok((StatusCode::OK, Json(res)))
 }
+
+type ApiResponse<T> = Result<(StatusCode, Json<T>), AppError>;

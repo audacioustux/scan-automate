@@ -3,7 +3,6 @@
 set -ea
 
 export REPO=`git remote get-url origin`
-export ARGOCD_OPTS='--port-forward --port-forward-namespace argocd'
 
 deploy-argocd(){
     echo "Deploying argocd..."
@@ -11,17 +10,20 @@ deploy-argocd(){
     kubectl apply -k k8s/kustomize/argocd -n argocd
 
     echo "Waiting for all argocd pods to be ready..."
+    sleep 5
     kubectl wait --for=condition=ready pod \
         --all \
         -n argocd \
         --timeout=300s
+
+    kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
 }
 
 login-argocd(){
     echo "Logging in to argocd..."
     local password=`kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
 
-    argocd login --username admin --password $password
+    argocd login localhost --insecure --username admin --password $password
 }
 
 add-private-repos(){
@@ -41,20 +43,29 @@ deploy-argocd-apps(){
 
 deploy-secrets(){
     echo "Deploying secrets..."
+
     local git=`kubectl create secret generic git-config --from-literal=username=${GIT_USERNAME:?} --from-literal=password=${GIT_TOKEN:?} --dry-run=client -o yaml`
     local docker=`kubectl create secret generic docker-config --from-file=$HOME/.docker/config.json --dry-run=client -o yaml`
-    local scan_automate_api=`kubectl create secret generic scan-automate-api --from-literal=JWT_SECRET=${JWT_SECRET:?} --from-literal=SMTP_HOST=${SMTP_HOST:?} --from-literal=SMTP_USERNAME=${SMTP_USERNAME:?} --from-literal=SMTP_PASSWORD=${SMTP_PASSWORD:?} --dry-run=client -o yaml`
     local aws=`kubectl create secret generic aws-config --from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:?} --from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:?} --dry-run=client -o yaml`
 
-    echo "$git" | kubectl apply -n argo -f -
-    echo "$docker" | kubectl apply -n argo -f -
-    echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
+    local ARGO_TOKEN=`kubectl get secret -n argo default.service-account-token -o=jsonpath='{.data.token}' | base64 --decode`
+    local scan_automate_api=`kubectl create secret generic scan-automate-api \
+        --from-literal=JWT_SECRET=${JWT_SECRET:?} \
+        --from-literal=SMTP_HOST=${SMTP_HOST:?} \
+        --from-literal=SMTP_USERNAME=${SMTP_USERNAME:?} \
+        --from-literal=SMTP_PASSWORD=${SMTP_PASSWORD:?} \
+        --from-literal=ARGO_WORKFLOW_TOKEN="Bearer $ARGO_TOKEN" \
+        --dry-run=client -o yaml`
+
     echo "$aws" | kubectl apply -n scan-automate -f -
+    echo "$docker" | kubectl apply -n argo -f -
+    echo "$git" | kubectl apply -n argo -f -
+    echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
 }
 
 deploy-argocd
 login-argocd
-# add-private-repos
+add-private-repos
 deploy-argocd-apps
 
-ebort -- deploy-secrets 2> /dev/null
+ebort -- deploy-secrets 2>/dev/null
