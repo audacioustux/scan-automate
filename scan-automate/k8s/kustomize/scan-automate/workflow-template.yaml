@@ -111,7 +111,7 @@ spec:
             cat *-report.* > report.md
             # whitelabel report
             cat report.md
-            sed -i 's/Zap/Fncyber/g' report.md
+            sed 's/Zap/Fncyber/gi' report.md
             # generate pdf
             pandoc -o report.pdf report.md
         workingDir: /workdir
