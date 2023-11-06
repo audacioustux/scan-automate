@@ -58,5 +58,5 @@ spec:
               dest: spec.arguments.parameters.2.value
             - src:
                 dependencyName: scan-workflow
-                dataTemplate: "scan-{{ .Input.body.id | hash }}"
+                dataTemplate: "scan-{{ .Input.body.id }}"
               dest: metadata.name
