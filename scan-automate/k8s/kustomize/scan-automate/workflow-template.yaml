@@ -85,8 +85,6 @@ spec:
           - |
             # run zap-baseline
             zap-baseline.py -t "{{inputs.parameters.uri}}" -w zap-report.md -I
-            # whitelabel report
-            sed -i 's/Zap/Fncyber/gi' zap-report.md
         volumeMounts:
           - name: workdir
             mountPath: /zap/wrk
@@ -111,6 +109,8 @@ spec:
           - |
             # concatenate reports
             cat *-report.* > report.md
+            # whitelabel report
+            sed -i 's/Zap/Fncyber/gi' report.md
             # generate pdf
             pandoc -o report.pdf report.md
         workingDir: /workdir
