@@ -22,7 +22,7 @@ deploy-argocd(){
 login-argocd(){
     echo "Logging in to argocd..."
     local password=`kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
-    local argocd_server=`kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].ip}'`
+    local argocd_server=`kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'`
 
     argocd login $argocd_server --insecure --username admin --password $password
 }
