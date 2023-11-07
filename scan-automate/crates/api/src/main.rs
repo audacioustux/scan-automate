@@ -3,7 +3,7 @@ use std::error::Error;
 use api::{config::CONFIG, errors::AppError, serve};
 use axum::{
     extract::{Path, State},
-    http::{header, HeaderValue, StatusCode},
+    http::StatusCode,
     routing::{get, post},
     Json, Router,
 };
@@ -19,7 +19,7 @@ use nanoid::nanoid;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
@@ -32,12 +32,7 @@ async fn main() {
         .route("/scans", post(scans_post))
         .route("/scans/confirm/:token", get(scans_confirm))
         .route("/scans/progress/:id", get(scans_progress))
-        .layer(
-            CorsLayer::new()
-                .allow_origin("*".parse::<HeaderValue>().unwrap())
-                .allow_headers(vec![header::CONTENT_TYPE])
-                .allow_methods(Any),
-        )
+        .layer(CorsLayer::permissive())
         .with_state(client);
 
     serve(app, CONFIG.port).await;

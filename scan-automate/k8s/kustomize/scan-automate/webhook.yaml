@@ -46,15 +46,15 @@ spec:
           parameters:
             - src:
                 dependencyName: scan-workflow
-                dataKey: body.email
+                dataKey: body.req.email
               dest: spec.arguments.parameters.0.value
             - src:
                 dependencyName: scan-workflow
-                dataKey: body.rustscan
+                dataKey: body.req.rustscan
               dest: spec.arguments.parameters.1.value
             - src:
                 dependencyName: scan-workflow
-                dataKey: body.zap
+                dataKey: body.req.zap
               dest: spec.arguments.parameters.2.value
             - src:
                 dependencyName: scan-workflow

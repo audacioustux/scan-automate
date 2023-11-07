@@ -1,0 +1,69 @@
+<h1>Scan Automate API</h1>
+
+<h2>Send Scan Request</h2>
+<form id="scanrequest">
+    <label>url: <input type="url" name="url" value="https://audacioustux.com" required /></label>
+    <label>email: <input type="email" name="email" value="tanjimhossain.pro@gmail.com" required /></label>
+    <br /><br />
+    <button type="submit">Send Scan Request</button>
+</form>
+<pre id="scanrequest_response"></pre>
+
+<h2>Get Scan Progress</h2>
+<form id="scanprogress">
+    <label>scan id: <input type="text" name="scan-id" required /></label>
+    <br /><br />
+    <button type="submit">Get Scan Progress</button>
+</form>
+<pre id="scanprogress_response"></pre>
+
+<script>
+    async function sendScanRequest(event) {
+        event.preventDefault();
+
+        const url = event.target.url.value;
+        const email = event.target.email.value;
+        const response = await fetch("http://localhost:4000/scans", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email,
+                zap: {
+                    uri: url,
+                },
+                rustscan: {
+                    uri: url,
+                },
+            }),
+        });
+
+        const data = await response.json();
+        console.log(data);
+
+        scanrequest_log.innerHTML = JSON.stringify(data);
+    }
+
+    const scanrequest_form = document.getElementById("scanrequest");
+    const scanrequest_log = document.getElementById("scanrequest_response");
+    scanrequest_form.addEventListener("submit", sendScanRequest, false);
+</script>
+
+<script>
+    async function getScanProgress(event) {
+        event.preventDefault();
+
+        const scanId = event.target["scan-id"].value;
+        const response = await fetch(`http://localhost:4000/scans/progress/${scanId}`);
+
+        const data = await response.json();
+        console.log(data);
+
+        scanprogress_log.innerHTML = JSON.stringify(data);
+    }
+
+    const scanprogress_form = document.getElementById("scanprogress");
+    const scanprogress_log = document.getElementById("scanprogress_response");
+    scanprogress_form.addEventListener("submit", getScanProgress, false);
+</script>
