@@ -59,7 +59,7 @@ struct ScanRequest {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct ScanInstance {
+struct ScanRequestWithID {
     id: ScanID,
     req: ScanRequest,
 }
@@ -83,7 +83,7 @@ struct JWTClaims<T> {
     exp: i64,
 }
 
-fn create_scan_request_token(req: &ScanInstance) -> Result<String, impl Error> {
+fn create_scan_request_token(req: &ScanRequestWithID) -> Result<String, impl Error> {
     let exp = Utc::now()
         .checked_add_signed(Duration::days(1))
         .unwrap()
@@ -104,7 +104,7 @@ async fn scans_post(Json(req): Json<ScanRequest>) -> ApiResponse<ScanID> {
         ScanID(nanoid!(10, &valid_pod_name_chars))
     };
 
-    let instance = ScanInstance { id, req };
+    let instance = ScanRequestWithID { id, req };
 
     let token = create_scan_request_token(&instance)?;
     let body = format!(
@@ -134,7 +134,7 @@ async fn scans_confirm(
     Path(token): Path<String>,
     State(client): State<Client>,
 ) -> ApiResponse<Value> {
-    let TokenData { claims, .. } = decode::<JWTClaims<ScanRequest>>(
+    let TokenData { claims, .. } = decode::<JWTClaims<ScanRequestWithID>>(
         &token,
         &DecodingKey::from_secret(CONFIG.jwt_secret.as_ref()),
         &Validation::new(Algorithm::HS256),

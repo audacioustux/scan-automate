@@ -22,8 +22,9 @@ deploy-argocd(){
 login-argocd(){
     echo "Logging in to argocd..."
     local password=`kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d`
+    local argocd_server=`kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].ip}'`
 
-    argocd login localhost --insecure --username admin --password $password
+    argocd login $argocd_server --insecure --username admin --password $password
 }
 
 add-private-repos(){
@@ -38,7 +39,8 @@ add-private-repos(){
 
 deploy-argocd-apps(){
     echo "Deploying argocd apps..."
-    kubectl apply -k k8s/apps/overlays/local
+    # kubectl apply -k k8s/apps/overlays/local
+    kubectl apply -k k8s/apps/overlays/eks
 }
 
 deploy-secrets(){

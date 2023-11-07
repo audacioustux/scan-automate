@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: scan-automate
-          image: scan-automate-api
+          image: tanjim/scan-automate-api
           imagePullPolicy: Never
           ports:
             - name: http

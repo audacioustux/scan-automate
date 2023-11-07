@@ -2,6 +2,7 @@ version: "3"
 
 tasks:
   default: task --list-all
+  ##
   argo:password: echo "Bearer $(kubectl get secret -n argo default.service-account-token -o=jsonpath='{.data.token}' | base64 --decode)"
   argo:port-forward: kubectl port-forward -n argo svc/argo-server 2746:2746
   argocd:password: echo "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)"
@@ -17,15 +18,25 @@ tasks:
   eks:update-kubeconfig:
     dir: terraform
     cmd: aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
-  ###
+  ##
+  api:build-image:
+    cmds:
+      - pack build scan-automate-api -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
+      - docker tag scan-automate-api tanjim/scan-automate-api:latest
+      - docker push tanjim/scan-automate-api:latest
   api:port-forward: kubectl port-forward svc/scan-automate -n scan-automate 4000:80
+  ### for development
   api:deps: cargo install systemfd cargo-watch
   api:dev:
     dir: crates/api
     deps: 
       - api:deps
-    cmd: systemfd --no-pid -s http::4000 -- cargo watch -x run
-  api:build-image: pack build scan-automate-api -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
-  ###
+    cmd: systemfd --no-pid -s http::4000 -- cargo watch -x 'run -- --argo-workflow-token dummy'
+  api:ui:dev:
+    dir: crates/api
+    deps: 
+      - api:deps
+    cmd: cargo watch -x 'run --example client'
+  ##
   up: 
     cmd: ./bin/up.sh
