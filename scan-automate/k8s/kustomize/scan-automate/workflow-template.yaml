@@ -29,6 +29,21 @@ spec:
         tasks:
           - name: debug
             template: debug
+          - name: ls
+            container:
+              image: alpine:latest
+              command: ["/bin/sh"]
+              args:
+                - -c
+                - |
+                  ls -la
+                  ls -la /workdir
+              workingDir: /workdir
+              volumeMounts:
+                - name: workdir
+                  mountPath: /workdir
+            dependencies:
+              - debug
           - name: rustscan
             template: rustscan
             when: "{{=workflow.parameters.rustscan != ''}}"
