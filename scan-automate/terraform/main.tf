@@ -11,15 +11,20 @@ data "aws_availability_zones" "available" {
 
 locals {
   cluster_name = "fncyber-eks"
+  azs          = slice(data.aws_availability_zones.available.names, 0, 3)
+  efs_csi_driver = {
+    service_account_name = "efs-csi-controller-sa"
+  }
 }
 
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5"
 
   name = "fncyber-vpc"
 
+  azs  = local.azs
   cidr = "10.0.0.0/16"
-  azs  = slice(data.aws_availability_zones.available.names, 0, 3)
 
   private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
   public_subnets  = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
@@ -41,7 +46,8 @@ module "vpc" {
 }
 
 module "eks" {
-  source = "terraform-aws-modules/eks/aws"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 19"
 
   cluster_name    = local.cluster_name
   cluster_version = "1.27"
@@ -54,19 +60,18 @@ module "eks" {
   enable_irsa = true
 
   eks_managed_node_group_defaults = {
-    ami_type      = "AL2_x86_64"
-    instance_type = "m5.xlarge"
+    ami_type       = "AL2_x86_64"
+    capacity_type  = "ON_DEMAND"
+    instance_types = ["m5.large"]
 
     tags = {
       "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+      "k8s.io/cluster-autoscaler/enabled"           = "true"
     }
   }
 
   eks_managed_node_groups = {
     general = {
-      capacity_type = "ON_DEMAND"
-      instance_type = "m5.xlarge"
-
       desired_size = 1
       max_size     = 3
       min_size     = 1
@@ -74,16 +79,11 @@ module "eks" {
       labels = {
         role = "general"
       }
-
-      tags = {
-        "kubernetes.io/cluster/${local.cluster_name}" = "owned"
-        "k8s.io/cluster-autoscaler/enabled"           = "true"
-      }
     }
 
     spot = {
-      capacity_type = "SPOT"
-      instance_type = "t3.small"
+      capacity_type  = "SPOT"
+      instance_types = ["t3.small"]
 
       desired_size = 0
       max_size     = 10
@@ -92,39 +92,11 @@ module "eks" {
       labels = {
         role = "spot"
       }
-
-      tags = {
-        "kubernetes.io/cluster/${local.cluster_name}" = "owned"
-        "k8s.io/cluster-autoscaler/enabled"           = "true"
-      }
     }
   }
 }
 
-data "aws_iam_policy" "ebs_csi_policy" {
-  arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-
-module "irsa-ebs-csi" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-
-  create_role                   = true
-  role_name                     = "AmazonEKSTFEBSCSIRole-${module.eks.cluster_name}"
-  provider_url                  = module.eks.oidc_provider
-  role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
-}
-
-resource "aws_eks_addon" "ebs-csi" {
-  cluster_name             = module.eks.cluster_name
-  addon_name               = "aws-ebs-csi-driver"
-  service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
-  tags = {
-    "eks_addon" = "ebs-csi"
-    "terraform" = "true"
-  }
-}
-
+// Cluster Autoscaler
 data "aws_iam_policy_document" "cluster_autoscaler_public" {
   statement {
     sid    = "ec2"
@@ -186,11 +158,181 @@ resource "aws_iam_policy" "cluster_autoscaler" {
 }
 
 module "eks_iam_assumable_role_autoscaler_eks_public" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  version = "~> 5"
 
   create_role                   = true
   role_name                     = "AmazonEKSTFClusterAutoscalerRole-${module.eks.cluster_name}"
   provider_url                  = module.eks.oidc_provider
   role_policy_arns              = [aws_iam_policy.cluster_autoscaler.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:cluster-autoscaler"]
+}
+
+// EFS
+module "efs" {
+  source  = "terraform-aws-modules/efs/aws"
+  version = "~> 1"
+  name    = "fncyber-efs"
+
+  mount_targets = {
+    for k, v in zipmap(local.azs, module.vpc.private_subnets) : k => { subnet_id = v }
+  }
+  security_group_description = "${local.cluster_name} EFS security group"
+  security_group_vpc_id      = module.vpc.vpc_id
+  security_group_rules = {
+    vpc = {
+      description = "NFS ingress from VPC private subnets"
+      cidr_blocks = module.vpc.private_subnets_cidr_blocks
+    }
+  }
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_name
+}
+
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    token                  = data.aws_eks_cluster_auth.cluster.token
+  }
+}
+
+resource "kubernetes_storage_class_v1" "efs" {
+  metadata {
+    name = "aws-efs"
+  }
+
+  storage_provisioner = "efs.csi.aws.com"
+  parameters = {
+    provisioningMode = "efs-ap"
+    fileSystemId     = module.efs.id
+    directoryPerms   = "777"
+  }
+
+  mount_options = ["iam"]
+}
+
+resource "aws_iam_role" "eks_efs" {
+  name = "${local.cluster_name}-efs"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = module.eks.oidc_provider_arn
+        }
+        Condition = {
+          StringEquals = {
+            "${module.eks.oidc_provider_arn}:sub" = "system:serviceaccount:kube-system:efs-csi-controller-sa"
+          }
+        }
+      }
+    ]
+  })
+}
+
+
+resource "aws_iam_policy" "efs" {
+  name = "${local.cluster_name}-efs"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "elasticfilesystem:*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "eks_efs_attach" {
+  role       = aws_iam_role.eks_efs.name
+  policy_arn = aws_iam_policy.efs.arn
+}
+
+resource "helm_release" "aws_efs_csi_driver" {
+  chart      = "aws-efs-csi-driver"
+  version    = "2.5.0"
+  name       = "aws-efs-csi-driver"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/"
+
+  set {
+    name  = "controller.serviceAccount.create"
+    value = true
+  }
+  set {
+    name  = "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.eks_efs.arn
+  }
+  set {
+    name  = "controller.serviceAccount.name"
+    value = "efs-${local.efs_csi_driver.service_account_name}"
+  }
+  set {
+    name  = "image.repository"
+    value = "602401143452.dkr.ecr.us-east-1.amazonaws.com/eks/aws-efs-csi-driver"
+  }
+}
+
+// test pvc
+resource "kubernetes_persistent_volume" "shared-efs-volume" {
+  metadata {
+    name = "${local.cluster_name}-shared-nfs"
+  }
+
+  spec {
+    capacity = {
+      storage = "1Mi"
+    }
+    access_modes       = ["ReadWriteMany"]
+    storage_class_name = "aws-efs"
+
+    persistent_volume_source {
+      csi {
+        driver        = "efs.csi.aws.com"
+        volume_handle = module.efs.id
+        volume_attributes = {
+          fileSystemId   = module.efs.id
+          directoryPerms = "777"
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_persistent_volume_claim" "shared-efs-claim" {
+  metadata {
+    name      = "${local.cluster_name}-shared-nfs"
+    namespace = "default"
+  }
+
+  spec {
+    access_modes = ["ReadWriteMany"]
+    resources {
+      requests = {
+        storage = "1Mi"
+      }
+    }
+    volume_name        = kubernetes_persistent_volume.shared-efs-volume.metadata.0.name
+    storage_class_name = "aws-efs"
+  }
+
+  wait_until_bound = false
 }

@@ -16,7 +16,7 @@ spec:
         name: workdir
       spec:
         accessModes:
-          - ReadWriteOnce
+          - ReadWriteMany
         resources:
           requests:
             storage: 256Mi
@@ -87,6 +87,15 @@ spec:
         args:
           - -c
           - |
+            # check if the current directory is writable by the user
+            if [ ! -w . ]; then
+              echo "Current directory is not writable by the user"
+              # print the permissions of the current directory
+              ls -la
+              # print current user and group
+              id
+              exit 1
+            fi
             # exit on error
             set -e
             # set explicit ulimit
@@ -108,7 +117,6 @@ spec:
             memory: 500Mi
             cpu: 500m
         securityContext:
-          fsGroup: 101
           allowPrivilegeEscalation: false
           capabilities:
             drop:
@@ -149,7 +157,6 @@ spec:
             memory: 500Mi
             cpu: 500m
         securityContext:
-          fsGroup: 101
           allowPrivilegeEscalation: false
           capabilities:
             drop:
