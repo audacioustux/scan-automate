@@ -59,7 +59,7 @@ the `status.phase` and `status.progress` might be the most useful information in
 
 ### The API
 
-in case it's necessary to make any change to the http api, crates/api is the place to make the change. The `ScanRequest` struct might be the most important struct to look at in order to extend the api.
+in case it's necessary to make any change to the http api, crates/api is the place to make the change. The `ScanRequest` struct might be the most important struct to look at in order to extend the api. Also, the email template needs to be updated with correct confirmation link url.
 
 make sure the changes are reflected in the `k8s/kustomize/scan-automate/webhook.yaml` trigger template parameters
 
