@@ -2,6 +2,8 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::343301376154:role/AmazonEKSTFClusterAutoscalerRole-fncyber-eks
   labels:
     k8s-addon: cluster-autoscaler.addons.k8s.io
     k8s-app: cluster-autoscaler

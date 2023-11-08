@@ -119,3 +119,73 @@ resource "aws_eks_addon" "ebs-csi" {
     "terraform" = "true"
   }
 }
+
+data "aws_iam_policy_document" "cluster_autoscaler_public" {
+  statement {
+    sid    = "ec2"
+    effect = "Allow"
+
+    actions = [
+      "ec2:DescribeLaunchTemplateVersions",
+      "ec2:DescribeInstanceTypes",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "ec2AutoScaling"
+    effect = "Allow"
+
+    actions = [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeLaunchConfigurations",
+      "autoscaling:DescribeTags",
+    ]
+
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "clusterAutoscalerOwn"
+    effect = "Allow"
+
+    actions = [
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup",
+      "autoscaling:UpdateAutoScalingGroup",
+    ]
+
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${local.cluster_name}"
+      values   = ["owned"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
+      values   = ["true"]
+    }
+  }
+}
+
+resource "aws_iam_policy" "cluster_autoscaler" {
+  name        = "cluster-autoscaler-policy"
+  description = "Policy for cluster autoscaler"
+  policy      = data.aws_iam_policy_document.cluster_autoscaler_public.json
+}
+
+module "eks_iam_assumable_role_autoscaler_eks_public" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+
+  create_role                   = true
+  role_name                     = "AmazonEKSTFClusterAutoscalerRole-${module.eks.cluster_name}"
+  provider_url                  = module.eks.oidc_provider
+  role_policy_arns              = [aws_iam_policy.cluster_autoscaler.arn]
+  oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:cluster-autoscaler"]
+}
