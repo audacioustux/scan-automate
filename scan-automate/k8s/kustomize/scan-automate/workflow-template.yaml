@@ -36,14 +36,14 @@ spec:
           - name: rustscan
             template: rustscan
             when: "{{=workflow.parameters.rustscan != ''}}"
-          - name: zap
-            template: zap
-            when: "{{=workflow.parameters.zap != ''}}"
+          # - name: zap
+          #   template: zap
+          #   when: "{{=workflow.parameters.zap != ''}}"
           - name: gen-pdf
             template: gen-pdf
             dependencies:
               - rustscan
-              - zap
+              # - zap
     - name: debug
       container:
         image: alpine:latest
@@ -92,7 +92,8 @@ spec:
             uri=$(echo {{inputs.parameters.uri}} | sed -e 's/http[s]*:\/\///g')
             # run rustscan
             # , add two spaces to the end of each line to prevent pandoc from interpreting the markdown
-            rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
+            # rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
+            echo $uri
         workingDir: /workdir
         volumeMounts:
           - name: workdir
