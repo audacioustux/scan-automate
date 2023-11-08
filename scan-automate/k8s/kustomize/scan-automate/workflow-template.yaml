@@ -79,7 +79,8 @@ spec:
           - name: uri
             value: "{{=jsonpath(workflow.parameters.rustscan, '$.uri')}}"
       container:
-        image: rustscan/rustscan:2.1.1
+        # image: rustscan/rustscan:2.1.1
+        image: alpine:latest
         command: ["/bin/sh"]
         args:
           - -c
@@ -93,7 +94,7 @@ spec:
             uri=$(echo -n {{inputs.parameters.uri}} | sed -e 's/http[s]*:\/\///g')
             # run rustscan
             # add two spaces to the end of each line to prevent pandoc from interpreting the markdown
-            rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
+            # rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
         # workingDir: /workdir
         # volumeMounts:
         #   - name: workdir
