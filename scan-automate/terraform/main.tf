@@ -53,6 +53,15 @@ module "eks" {
 
   enable_irsa = true
 
+  eks_managed_node_group_defaults = {
+    ami_type      = "AL2_x86_64"
+    instance_type = "m5.xlarge"
+
+    tags = {
+      "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+    }
+  }
+
   eks_managed_node_groups = {
     general = {
       capacity_type = "ON_DEMAND"

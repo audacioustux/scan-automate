@@ -6,6 +6,9 @@ metadata:
 spec:
   generateName: scan-
   entrypoint: scan
+  retryStrategy:
+   retryPolicy: OnError
+   limit: 1
   artifactGC:
     strategy: OnWorkflowDeletion
   volumeClaimTemplates:
@@ -13,7 +16,7 @@ spec:
         name: workdir
       spec:
         accessModes:
-          - ReadWriteMany
+          - ReadWriteOnce
         resources:
           requests:
             storage: 256Mi
@@ -106,13 +109,13 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /workdir
-        resources:
-          limits:
-            memory: 1Gi
-            cpu: "1"
-          requests:
-            memory: 500Mi
-            cpu: 500m
+        # resources:
+        #   limits:
+        #     memory: 1Gi
+        #     cpu: "1"
+        #   requests:
+        #     memory: 500Mi
+        #     cpu: 500m
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -137,13 +140,13 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /zap/wrk
-        resources:
-          limits:
-            memory: 1Gi
-            cpu: "1"
-          requests:
-            memory: 500Mi
-            cpu: 500m
+        # resources:
+        #   limits:
+        #     memory: 1Gi
+        #     cpu: "1"
+        #   requests:
+        #     memory: 500Mi
+        #     cpu: 500m
         # securityContext:
         #   allowPrivilegeEscalation: false
         #   capabilities:
