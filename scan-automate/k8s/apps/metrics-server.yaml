@@ -13,8 +13,8 @@ spec:
     namespace: monitoring
     server: "https://kubernetes.default.svc"
   source:
-    path: k8s/kustomize/metrics-server
-    repoURL: "https://github.com/arakoodev/edgeCloud"
+    path: scan-automate/k8s/kustomize/metrics-server
+    repoURL: "https://github.com/audacioustux/scan-automate"
     targetRevision: HEAD
   syncPolicy:
     automated:
