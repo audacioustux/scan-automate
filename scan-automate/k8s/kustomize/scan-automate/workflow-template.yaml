@@ -79,13 +79,16 @@ spec:
           - name: uri
             value: "{{=jsonpath(workflow.parameters.rustscan, '$.uri')}}"
       container:
-        # image: rustscan/rustscan:2.1.1
-        image: alpine:latest
+        image: rustscan/rustscan:2.1.1
         command: ["/bin/sh"]
         args:
           - -c
           - |
-            touch rustscan-report.txt
+            # check if the current directory is writable by the user
+            if [ ! -w . ]; then
+              echo "Current directory is not writable by the user"
+              exit 1
+            fi
             # exit on error
             set -e
             # set explicit ulimit
@@ -94,7 +97,7 @@ spec:
             uri=$(echo -n {{inputs.parameters.uri}} | sed -e 's/http[s]*:\/\///g')
             # run rustscan
             # add two spaces to the end of each line to prevent pandoc from interpreting the markdown
-            # rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
+            rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.md
         workingDir: /workdir
         volumeMounts:
           - name: workdir
@@ -106,11 +109,11 @@ spec:
           requests:
             memory: 500Mi
             cpu: 500m
-        # securityContext:
-        #   allowPrivilegeEscalation: false
-        #   capabilities:
-        #     drop:
-        #       - ALL
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
     - name: zap
       inputs:
         parameters:
