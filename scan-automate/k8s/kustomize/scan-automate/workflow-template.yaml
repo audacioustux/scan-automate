@@ -30,18 +30,7 @@ spec:
           - name: debug
             template: debug
           - name: ls
-            container:
-              image: alpine:latest
-              command: ["/bin/sh"]
-              args:
-                - -c
-                - |
-                  ls -la
-                  ls -la /workdir
-              workingDir: /workdir
-              volumeMounts:
-                - name: workdir
-                  mountPath: /workdir
+            template: ls
             dependencies:
               - debug
           - name: rustscan
@@ -68,6 +57,18 @@ spec:
             echo "zap: {{workflow.parameters.zap}}"
             touch ~/debug.txt
             touch debug.txt
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
+    - name: ls
+      container:
+        image: alpine:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            ls -la
         workingDir: /workdir
         volumeMounts:
           - name: workdir
