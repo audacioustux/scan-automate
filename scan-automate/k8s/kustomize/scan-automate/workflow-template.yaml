@@ -27,12 +27,12 @@ spec:
     - name: scan
       dag:
         tasks:
-          - name: debug
-            template: debug
-          - name: ls
-            template: ls
-            dependencies:
-              - debug
+          # - name: debug
+          #   template: debug
+          # - name: ls
+          #   template: ls
+          #   dependencies:
+          #     - debug
           - name: rustscan
             template: rustscan
             when: "{{=workflow.parameters.rustscan != ''}}"
