@@ -19,6 +19,7 @@ spec:
             storage: 256Mi
   arguments:
     parameters:
+      - name: id
       - name: email
       - name: rustscan
       - name: zap
@@ -130,7 +131,17 @@ spec:
       outputs:
         artifacts:
           - name: output
-            path: /workdir/report.pdf
+            path: /workdir/report-{{workflow.parameters.id}}.pdf
+            s3:
+              endpoint: s3.amazonaws.com
+              bucket: "{{workflow.parameters.email}}"
+              key: report-{{workflow.parameters.id}}.pdf.gz
+              accessKeySecret:
+                name: aws-config
+                key: AWS_ACCESS_KEY_ID
+              secretKeySecret:
+                name: aws-config
+                key: AWS_SECRET_ACCESS_KEY
   volumes:
     - name: docker-config
       secret:

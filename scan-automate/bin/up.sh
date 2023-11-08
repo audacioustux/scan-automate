@@ -39,7 +39,6 @@ add-private-repos(){
 
 deploy-argocd-apps(){
     echo "Deploying argocd apps..."
-    # kubectl apply -k k8s/apps/overlays/local
     kubectl apply --recursive -f k8s/apps
 }
 
@@ -59,9 +58,10 @@ deploy-secrets(){
         --from-literal=ARGO_WORKFLOW_TOKEN="Bearer $ARGO_TOKEN" \
         --dry-run=client -o yaml`
 
-    echo "$aws" | kubectl apply -n scan-automate -f -
+    echo "$aws" | kubectl apply -n argo -f -
     echo "$docker" | kubectl apply -n argo -f -
     echo "$git" | kubectl apply -n argo -f -
+
     echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
 }
 

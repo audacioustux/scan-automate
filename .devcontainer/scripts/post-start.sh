@@ -10,10 +10,13 @@ tunnel-minikube() {
   minikube tunnel --bind-address "0.0.0.0"
 }
 
-minikube status || minikube start 
+start-minikube() {
+  minikube status || minikube start 
+}
 
+# start-minikube
 parallel --halt now,fail=1 \
     --linebuffer \
     -j0 ::: \
         "docker-login" \
-        "tunnel-minikube" 
+        # "tunnel-minikube" 

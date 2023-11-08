@@ -53,10 +53,6 @@ module "eks" {
 
   enable_irsa = true
 
-  eks_managed_node_group_defaults = {
-    disk_size = 50
-  }
-
   eks_managed_node_groups = {
     general = {
       capacity_type = "ON_DEMAND"
