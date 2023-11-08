@@ -9,9 +9,11 @@
 - the api server can request for a scan progress status from the workflow engine
 - the workflow collects the scan results, creates a pdf report, stores the report in s3, and sends an email with the report link
 
-## EKS Cluster
+## Test Setup
 
-### Create EKS Cluster
+### EKS Cluster
+
+#### Create EKS Cluster
 
 _**Pre-requisite**_
 
@@ -22,7 +24,7 @@ _**Steps**_
 
 - run `task eks:up`
 
-### Provision EKS Cluster
+#### Provision EKS Cluster
 
 _**Pre-requisite**_
 
@@ -32,9 +34,9 @@ _**Steps**_
 
 - run `task up`
 
-## Test Scan Workflow
+### Scan Workflow
 
-### From Browser UI
+#### From Browser UI
 
 _**Pre-requisite**_
 
@@ -51,14 +53,15 @@ _**Steps**_
   - take not of the Scan ID
 - use the scan id to request for a scan progress status
 
-the status.phase and status.progress might be the most useful information in the progress status response
+the `status.phase` and `status.progress` might be the most useful information in the progress status response
 
 ## Making Changes
 
 ### The API
 
 in case it's necessary to make any change to the http api, crates/api is the place to make the change. The `ScanRequest` struct might be the most important struct to look at in order to extend the api.
-> NOTE: make sure the changes are reflected in the `k8s/kustomize/scan-automate/webhook.yaml` trigger template parameters
+
+make sure the changes are reflected in the `k8s/kustomize/scan-automate/webhook.yaml` trigger template parameters
 
 currently the container image for the api is pushed to tanjim/scan-automate-api. To build and push the image to another registry, makes changes to `api:build-image` task in `taskfile.yaml`
 
@@ -71,3 +74,13 @@ all the scanners are implemented as steps in Argo Workflow. The workflow is defi
 eks cluster is provisioned with terraform. The terraform code is in `terraform` directory. To make changes to the cluster, make changes to the terraform code and run `task eks:up` to apply the changes.
 
 currently the cluster is set to use two node groups. `general` for platform components, `spot` for scanners / workflow pods.
+
+## bin/up.sh
+
+`bin/up.sh` is a script to provision the eks cluster. it should be called with `task up` task. the script can be run multiple times, and it should be idempotent. the script does the following:
+
+- deploys argocd
+- tries to log-in to argocd server with the argocd cli
+- adds current repo as a git repo in argocd (necessary if the repo is private)
+- deploys all system components as argocd applications (in k8s/apps)
+- deploys all secrets
