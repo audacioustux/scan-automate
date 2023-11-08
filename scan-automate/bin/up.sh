@@ -40,7 +40,7 @@ add-private-repos(){
 deploy-argocd-apps(){
     echo "Deploying argocd apps..."
     # kubectl apply -k k8s/apps/overlays/local
-    kubectl apply -k k8s/apps/overlays/eks
+    kubectl apply --recursive -f k8s/apps
 }
 
 deploy-secrets(){
@@ -66,7 +66,7 @@ deploy-secrets(){
 }
 
 deploy-argocd
-login-argocd
+ebort -- login-argocd
 add-private-repos
 deploy-argocd-apps
 

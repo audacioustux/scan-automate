@@ -46,32 +46,52 @@ module "eks" {
   cluster_name    = local.cluster_name
   cluster_version = "1.27"
 
-  vpc_id                         = module.vpc.vpc_id
-  subnet_ids                     = module.vpc.private_subnets
-  cluster_endpoint_public_access = true
+  vpc_id                          = module.vpc.vpc_id
+  subnet_ids                      = module.vpc.private_subnets
+  cluster_endpoint_public_access  = true
+  cluster_endpoint_private_access = true
+
+  enable_irsa = true
+
+  eks_managed_node_group_defaults = {
+    disk_size = 50
+  }
 
   eks_managed_node_groups = {
-    # AL2_ARM_64 = {
-    #   name = "node-group-t4g"
+    general = {
+      capacity_type = "ON_DEMAND"
+      instance_type = "m5.xlarge"
 
-    #   ami_type       = "AL2_ARM_64"
-    #   instance_types = ["t4g.small"]
-    #   capacity_type  = "SPOT"
-
-    #   min_size     = 1
-    #   max_size     = 2
-    #   desired_size = 2
-    # }
-
-    AL2_x86_64 = {
-      name = "node-group-al2-x86-64"
-
-      ami_type       = "AL2_x86_64"
-      instance_types = ["m5.large"]
-      capacity_type  = "SPOT"
-
-      max_size     = 3
       desired_size = 1
+      max_size     = 3
+      min_size     = 1
+
+      labels = {
+        role = "general"
+      }
+
+      tags = {
+        "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+        "k8s.io/cluster-autoscaler/enabled"           = "true"
+      }
+    }
+
+    spot = {
+      capacity_type = "SPOT"
+      instance_type = "t3.small"
+
+      desired_size = 0
+      max_size     = 10
+      min_size     = 0
+
+      labels = {
+        role = "spot"
+      }
+
+      tags = {
+        "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+        "k8s.io/cluster-autoscaler/enabled"           = "true"
+      }
     }
   }
 }
@@ -97,20 +117,5 @@ resource "aws_eks_addon" "ebs-csi" {
   tags = {
     "eks_addon" = "ebs-csi"
     "terraform" = "true"
-  }
-}
-
-module "cluster_autoscaler_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-
-  role_name                        = "cluster-autoscaler"
-  attach_cluster_autoscaler_policy = true
-  cluster_autoscaler_cluster_names = [module.eks.cluster_name]
-
-  oidc_providers = {
-    ex = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:cluster-autoscaler"]
-    }
   }
 }

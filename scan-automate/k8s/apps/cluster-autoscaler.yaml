@@ -11,13 +11,11 @@ spec:
   project: default
   destination:
     server: "https://kubernetes.default.svc"
+    namespace: kube-system
   source:
-    repoURL: https://kubernetes.github.io/autoscaler
-    chart: cluster-autoscaler
-    targetRevision: '*'
-    helm:
-      values: |
-        'autoDiscovery.clusterName'=fncyber-eks
+    path: scan-automate/k8s/kustomize/cluster-autoscaler
+    repoURL: "https://github.com/audacioustux/scan-automate"
+    targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true
@@ -26,4 +24,3 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-

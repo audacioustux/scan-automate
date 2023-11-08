@@ -1,7 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-- argo-events.yaml
-- argo-workflows.yaml
-- cert-manager.yaml
-- scan-automate.yaml
