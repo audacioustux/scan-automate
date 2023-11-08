@@ -89,9 +89,10 @@ spec:
             # set explicit ulimit
             ulimit -n 5100
             # canonicalize url
-            uri=$(echo {{inputs.parameters.uri}} | sed -e 's/http[s]*:\/\///g')
-            # run rustscan, add two spaces to the end of each line to prevent pandoc from interpreting the markdown
+            uri=$(echo -n {{inputs.parameters.uri}} | sed -e 's/http[s]*:\/\///g')
+            # run rustscan
             rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri > rustscan-report.txt
+            # add two spaces to the end of each line to prevent pandoc from interpreting the markdown
             sed -i 's/$/  /' rustscan-report.txt
         workingDir: /workdir
         volumeMounts:
