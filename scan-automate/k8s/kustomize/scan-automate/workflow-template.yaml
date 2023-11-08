@@ -87,15 +87,6 @@ spec:
         args:
           - -c
           - |
-            # check if the current directory is writable by the user
-            if [ ! -w . ]; then
-              echo "Current directory is not writable by the user"
-              # print the permissions of the current directory
-              ls -la
-              # print current user and group
-              id
-              exit 1
-            fi
             # exit on error
             set -e
             # set explicit ulimit
@@ -109,14 +100,15 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /workdir
-        # resources:
-        #   limits:
-        #     memory: 1Gi
-        #     cpu: "1"
-        #   requests:
-        #     memory: 500Mi
-        #     cpu: 500m
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: "1"
+          requests:
+            memory: 500Mi
+            cpu: 500m
         securityContext:
+          fsGroup: 101
           allowPrivilegeEscalation: false
           capabilities:
             drop:
@@ -132,6 +124,15 @@ spec:
         args:
           - -c
           - |
+            # check if the current directory is writable by the user
+            if [ ! -w . ]; then
+              echo "Current directory is not writable by the user"
+              # print the permissions of the current directory
+              ls -la
+              # print current user and group
+              id
+              exit 1
+            fi
             # run zap-baseline
             zap-baseline.py -t "{{inputs.parameters.uri}}" -w zap-report.md -I
             # whitelabel report
@@ -140,18 +141,19 @@ spec:
         volumeMounts:
           - name: workdir
             mountPath: /zap/wrk
-        # resources:
-        #   limits:
-        #     memory: 1Gi
-        #     cpu: "1"
-        #   requests:
-        #     memory: 500Mi
-        #     cpu: 500m
-        # securityContext:
-        #   allowPrivilegeEscalation: false
-        #   capabilities:
-        #     drop:
-        #       - ALL
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: "1"
+          requests:
+            memory: 500Mi
+            cpu: 500m
+        securityContext:
+          fsGroup: 101
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
     - name: gen-pdf
       container:
         image: pandoc/latex:latest
