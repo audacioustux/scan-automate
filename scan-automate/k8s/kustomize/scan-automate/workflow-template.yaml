@@ -87,6 +87,10 @@ spec:
             # check if the current directory is writable by the user
             if [ ! -w . ]; then
               echo "Current directory is not writable by the user"
+              # print the permissions of the current directory
+              ls -la
+              # print current user and group
+              id
               exit 1
             fi
             # exit on error
