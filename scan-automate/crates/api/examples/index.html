@@ -15,7 +15,7 @@
     <br /><br />
     <button type="submit">Get Scan Progress</button>
 </form>
-<pre id="scanprogress_response"></pre>
+<pre id="scanprogress_response" style="width: 100%; overflow-x: scroll;"></pre>
 
 <script>
     async function sendScanRequest(event) {
@@ -60,7 +60,7 @@
         const data = await response.json();
         console.log(data);
 
-        scanprogress_log.innerHTML = JSON.stringify(data);
+        scanprogress_log.innerHTML = JSON.stringify(data, undefined, 4);
     }
 
     const scanprogress_form = document.getElementById("scanprogress");

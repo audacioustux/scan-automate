@@ -49,7 +49,8 @@ spec:
         args:
           - -c
           - |
-            set -eax
+            # exit on error
+            set -e
             # set explicit ulimit
             ulimit -n 5100
             # canonicalize url
@@ -68,11 +69,11 @@ spec:
           limits:
             memory: 1Gi
             cpu: 1
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
+        # securityContext:
+        #   allowPrivilegeEscalation: false
+        #   capabilities:
+        #     drop:
+        #       - ALL
     - name: zap
       inputs:
         parameters:
@@ -94,16 +95,16 @@ spec:
             mountPath: /zap/wrk
         resources:
           requests:
+            memory: 0.5Gi
+            cpu: 0.5
+          limits:
             memory: 1Gi
             cpu: 1
-          limits:
-            memory: 2Gi
-            cpu: 2
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
+        # securityContext:
+        #   allowPrivilegeEscalation: false
+        #   capabilities:
+        #     drop:
+        #       - ALL
     - name: gen-pdf
       container:
         image: pandoc/latex:latest
@@ -123,11 +124,11 @@ spec:
           limits:
             memory: 0.5Gi
             cpu: 0.5
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
+        # securityContext:
+        #   allowPrivilegeEscalation: false
+        #   capabilities:
+        #     drop:
+        #       - ALL
       outputs:
         artifacts:
           - name: output
