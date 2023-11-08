@@ -27,6 +27,8 @@ spec:
     - name: scan
       dag:
         tasks:
+          - name: debug
+            template: debug
           - name: rustscan
             template: rustscan
             when: "{{=workflow.parameters.rustscan != ''}}"
@@ -38,6 +40,23 @@ spec:
             dependencies:
               - rustscan
               - zap
+    - name: debug
+      container:
+        image: alpine:latest
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            echo "id: {{workflow.parameters.id}}"
+            echo "email: {{workflow.parameters.email}}"
+            echo "rustscan: {{workflow.parameters.rustscan}}"
+            echo "zap: {{workflow.parameters.zap}}"
+            touch ~/debug.txt
+            touch debug.txt
+        workingDir: /workdir
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
     - name: rustscan
       inputs:
         parameters:
@@ -63,12 +82,12 @@ spec:
           - name: workdir
             mountPath: /workdir
         resources:
-          requests:
-            memory: 0.5Gi
-            cpu: 0.5
           limits:
             memory: 1Gi
-            cpu: 1
+            cpu: "1"
+          requests:
+            memory: 500Mi
+            cpu: 500m
         # securityContext:
         #   allowPrivilegeEscalation: false
         #   capabilities:
@@ -94,12 +113,12 @@ spec:
           - name: workdir
             mountPath: /zap/wrk
         resources:
-          requests:
-            memory: 0.5Gi
-            cpu: 0.5
           limits:
             memory: 1Gi
-            cpu: 1
+            cpu: "1"
+          requests:
+            memory: 500Mi
+            cpu: 500m
         # securityContext:
         #   allowPrivilegeEscalation: false
         #   capabilities:
