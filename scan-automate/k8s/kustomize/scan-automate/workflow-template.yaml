@@ -94,10 +94,10 @@ spec:
             # run rustscan
             # add two spaces to the end of each line to prevent pandoc from interpreting the markdown
             rustscan -r 1-65535 -t 5000 -b 5000 --accessible -a $uri | sed 's/$/  /' > rustscan-report.txt
-        workingDir: /workdir
-        volumeMounts:
-          - name: workdir
-            mountPath: /workdir
+        # workingDir: /workdir
+        # volumeMounts:
+        #   - name: workdir
+        #     mountPath: /workdir
         resources:
           limits:
             memory: 1Gi
