@@ -173,7 +173,7 @@ resource "kubernetes_service_account_v1" "cluster_autoscaler" {
     namespace = "kube-system"
 
     annotations = {
-      "eks.amazonaws.com/role-arn" = module.eks_iam_assumable_role_autoscaler_eks.role_arn
+      "eks.amazonaws.com/role-arn" = module.eks_iam_assumable_role_autoscaler_eks.iam_role_arn
     }
 
     labels = {
@@ -182,7 +182,6 @@ resource "kubernetes_service_account_v1" "cluster_autoscaler" {
     }
   }
 }
-
 
 // EFS
 module "efs" {
