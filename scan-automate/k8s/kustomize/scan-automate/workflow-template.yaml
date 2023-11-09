@@ -163,9 +163,9 @@ spec:
         args:
           - s3
           - presign
-          - s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf
-          - --expires-in
-          - 604800
+          - "s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf"
+          - "--expires-in"
+          - "604800"
         envFrom:
           - secretRef:
               name: aws-config
