@@ -158,7 +158,7 @@ spec:
             s3:
               endpoint: s3.amazonaws.com
               bucket: "scan-automate-reports"
-              createBucketIfNotPresent: true
+              createBucketIfNotPresent: {}
               key: report-{{workflow.parameters.id}}.pdf.gz
               accessKeySecret:
                 name: aws-config
