@@ -183,11 +183,13 @@ spec:
             value: "{{tasks.get-signed-url.outputs.parameters.signed-url}}"
       container:
         image: tanjim/lettre-smtp:latest
-        command:
-          - lettre-smtp
-          - --mail-to {{inputs.parameters.email}} 
-          - --subject "Scan Report for {{workflow.parameters.id}}"
-          - --body "{{inputs.parameters.signed-url}}"
+        args:
+          - --mail-to 
+          - {{inputs.parameters.email}} 
+          - --subject 
+          - "Scan Report for {{workflow.parameters.id}}"
+          - --body 
+          - {{inputs.parameters.signed-url}}
         envFrom:
           - secretRef:
               name: smtp-config
