@@ -167,6 +167,23 @@ module "eks_iam_assumable_role_autoscaler_eks" {
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:cluster-autoscaler"]
 }
 
+resource "kubernetes_service_account_v1" "cluster_autoscaler" {
+  metadata {
+    name      = "cluster-autoscaler"
+    namespace = "kube-system"
+
+    annotations = {
+      "eks.amazonaws.com/role-arn" = module.eks_iam_assumable_role_autoscaler_eks.role_arn
+    }
+
+    labels = {
+      "k8s-addon" = "cluster-autoscaler.addons.k8s.io"
+      "k8s-app"   = "cluster-autoscaler"
+    }
+  }
+}
+
+
 // EFS
 module "efs" {
   source  = "terraform-aws-modules/efs/aws"

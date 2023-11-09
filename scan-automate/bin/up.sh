@@ -64,6 +64,7 @@ deploy-secrets(){
     echo "$aws" | kubectl apply -n argo -f -
     echo "$docker" | kubectl apply -n argo -f -
     echo "$git" | kubectl apply -n argo -f -
+    echo "$smtp" | kubectl apply -n argo -f -
 
     echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
     echo "$smtp" | kubectl apply -n scan-automate -f -

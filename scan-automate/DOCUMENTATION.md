@@ -9,6 +9,13 @@
 - the api server can request for a scan progress status from the workflow engine
 - the workflow collects the scan results, creates a pdf report, stores the report in s3, and sends an email with the report link
 
+_**Components**_
+
+- AWS EKS, with cluster-autoscaler, EFS CSI driver, Metrics Server
+- Argo Workflow, CD, Events
+- Terraform
+- Api Server written in Rust (axum, lettre, clap)
+
 ## Test Setup
 
 ### EKS Cluster
@@ -73,7 +80,7 @@ all the scanners are implemented as steps in Argo Workflow. The workflow is defi
 
 eks cluster is provisioned with terraform. The terraform code is in `terraform` directory. To make changes to the cluster, make changes to the terraform code and run `task eks:up` to apply the changes.
 
-currently the cluster is set to use two node groups. `general` for platform components, `spot` for scanners / workflow pods.
+currently the cluster is set to use two node groups. `general` - meant for platform components, `spot` - meant for scanners / workflow pods.
 
 ## bin/up.sh
 
