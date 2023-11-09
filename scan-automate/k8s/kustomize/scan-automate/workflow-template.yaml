@@ -183,7 +183,8 @@ spec:
             value: "{{tasks.get-signed-url.outputs.parameters.signed-url}}"
       container:
         image: tanjim/lettre-smtp:latest
-        args:
+        command:
+          - lettre-smtp
           - --mail-to {{inputs.parameters.email}} 
           - --subject "Scan Report for {{workflow.parameters.id}}"
           - --body "{{inputs.parameters.signed-url}}"
