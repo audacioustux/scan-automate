@@ -144,7 +144,7 @@ spec:
             mountPath: /workdir
         resources:
           limits:
-            memory: 0.5Gi
+            memory: 1Gi
             cpu: 0.5
         securityContext:
           allowPrivilegeEscalation: false
@@ -155,12 +155,14 @@ spec:
         artifacts:
           - name: output
             path: /workdir/report-{{workflow.parameters.id}}.pdf
+            archive:
+              none: {}
             s3:
               endpoint: s3.amazonaws.com
               bucket: "scan-automate-reports"
               createBucketIfNotPresent:
                 enabled: true
-              key: report-{{workflow.parameters.id}}.pdf.gz
+              key: report-{{workflow.parameters.id}}.pdf
               accessKeySecret:
                 name: aws-config
                 key: AWS_ACCESS_KEY_ID
