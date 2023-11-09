@@ -42,10 +42,10 @@ spec:
             dependencies:
               - rustscan
               - zap
-          # - name: get-signed-url
-          #   template: get-signed-url
-          #   dependencies:
-          #     - gen-pdf
+          - name: get-signed-url
+            template: get-signed-url
+            dependencies:
+              - gen-pdf
           # - name: send-signed-url
           #   template: send-signed-url
           #   dependencies:
@@ -157,23 +157,23 @@ spec:
               secretKeySecret:
                 name: aws-config
                 key: AWS_SECRET_ACCESS_KEY
-    # - name: get-signed-url
-    #   container:
-    #     image: amazon/aws-cli:latest
-    #     command: aws s3 presign s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf --expires-in 604800 > /tmp/outputs/signed-url.txt
-    #     envFrom:
-    #       - secretRef:
-    #           name: aws-config
-    #     securityContext:
-    #       allowPrivilegeEscalation: false
-    #       capabilities:
-    #         drop:
-    #           - ALL
-      # outputs:
-      #   parameters:
-      #     - name: signed-url
-      #       valueFrom:
-      #         path: /tmp/outputs/signed-url.txt
+    - name: get-signed-url
+      container:
+        image: amazon/aws-cli:latest
+        args:
+          - s3
+          - presign
+          - s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf
+          - --expires-in
+          - 604800
+        envFrom:
+          - secretRef:
+              name: aws-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
     # - name: send-signed-url
     #   inputs:
     #     parameters:
