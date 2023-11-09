@@ -73,5 +73,4 @@ deploy-argocd
 ebort -- login-argocd
 add-private-repos
 deploy-argocd-apps
-
-ebort -- deploy-secrets 2>/dev/null
+ebort -- deploy-secrets
