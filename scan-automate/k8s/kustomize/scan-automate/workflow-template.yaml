@@ -46,10 +46,14 @@ spec:
             template: get-signed-url
             dependencies:
               - gen-pdf
-          # - name: send-signed-url
-          #   template: send-signed-url
-          #   dependencies:
-          #     - get-signed-url
+          - name: mail-signed-url
+            template: mail-signed-url
+            dependencies:
+              - get-signed-url
+            arguments:
+              parameters:
+                - name: signed-url
+                  value: "{{tasks.get-signed-url.outputs.result}}"
     - name: rustscan
       inputs:
         parameters:
@@ -174,23 +178,24 @@ spec:
           capabilities:
             drop:
               - ALL
-    # - name: send-signed-url
-    #   inputs:
-    #     parameters:
-    #       - name: email
-    #         value: "{{workflow.parameters.email}}"
-    #       - name: signed-url
-    #         value: "{{tasks.get-signed-url.outputs.parameters.signed-url}}"
-    #   container:
-    #     image: tanjim/lettre-smtp:latest
-    #     envFrom:
-    #       - secretRef:
-    #           name: smtp-config
-    #     securityContext:
-    #       allowPrivilegeEscalation: false
-    #       capabilities:
-    #         drop:
-    #           - ALL
+    - name: mail-signed-url
+      inputs:
+        parameters:
+          - name: signed-url
+      container:
+        image: tanjim/lettre-smtp:latest
+        args:
+          - "--mail-to={{workflow.parameters.email}}"
+          - "--subject=Scan Report"
+          - "--body={{inputs.parameters.signed-url}}"
+        envFrom:
+          - secretRef:
+              name: smtp-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
   volumes:
     - name: docker-config
       secret:
