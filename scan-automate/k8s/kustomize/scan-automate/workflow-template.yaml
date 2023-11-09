@@ -179,13 +179,16 @@ spec:
           - name: email
             value: "{{workflow.parameters.email}}"
       container:
-        image: aws/aws-cli:latest
+        image: amazon/aws-cli:latest
         command: ["/bin/sh"]
         args:
           - -c
           - |
             aws s3 presign s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf --expires-in 604800 > signed-url.txt
             cat signed-url.txt
+        envFrom:
+          - secretRef:
+              name: aws-config
   volumes:
     - name: docker-config
       secret:
