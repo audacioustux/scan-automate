@@ -184,12 +184,12 @@ spec:
       container:
         image: tanjim/lettre-smtp:latest
         args:
-          - --mail-to 
-          - {{inputs.parameters.email}} 
-          - --subject 
+          - "--mail-to"
+          - "{{inputs.parameters.email}}"
+          - "--subject"
           - "Scan Report for {{workflow.parameters.id}}"
-          - --body 
-          - {{inputs.parameters.signed-url}}
+          - "--body" 
+          - "{{inputs.parameters.signed-url}}"
         envFrom:
           - secretRef:
               name: smtp-config
