@@ -20,6 +20,7 @@ spec:
         resources:
           requests:
             storage: 256Mi
+        storageClassName: aws-efs
   arguments:
     parameters:
       - name: id

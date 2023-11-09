@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pvc-consumer-pod
+spec:
+  containers:
+    - name: my-container
+      image: nginx  # Just an example, use your required image
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"  # The path where the volume should be mounted inside the container
+          name: my-volume
+  volumes:
+    - name: my-volume
+      persistentVolumeClaim:
+        claimName: my-dynamic-pvc  # The name of your PVC
+

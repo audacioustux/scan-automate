@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-dynamic-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "aws-efs"
+  resources:
+    requests:
+      storage: 1Gi  # specify the size of the volume
+

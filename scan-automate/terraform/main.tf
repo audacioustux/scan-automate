@@ -97,7 +97,7 @@ module "eks" {
 }
 
 // Cluster Autoscaler
-data "aws_iam_policy_document" "cluster_autoscaler_public" {
+data "aws_iam_policy_document" "cluster_autoscaler" {
   statement {
     sid    = "ec2"
     effect = "Allow"
@@ -120,7 +120,6 @@ data "aws_iam_policy_document" "cluster_autoscaler_public" {
       "autoscaling:DescribeLaunchConfigurations",
       "autoscaling:DescribeTags",
     ]
-
 
     resources = ["*"]
   }
@@ -154,10 +153,10 @@ data "aws_iam_policy_document" "cluster_autoscaler_public" {
 resource "aws_iam_policy" "cluster_autoscaler" {
   name        = "cluster-autoscaler-policy"
   description = "Policy for cluster autoscaler"
-  policy      = data.aws_iam_policy_document.cluster_autoscaler_public.json
+  policy      = data.aws_iam_policy_document.cluster_autoscaler.json
 }
 
-module "eks_iam_assumable_role_autoscaler_eks_public" {
+module "eks_iam_assumable_role_autoscaler_eks" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
   version = "~> 5"
 
@@ -173,6 +172,8 @@ module "efs" {
   source  = "terraform-aws-modules/efs/aws"
   version = "~> 1"
   name    = "fncyber-efs"
+
+  attach_policy = false
 
   mount_targets = {
     for k, v in zipmap(local.azs, module.vpc.private_subnets) : k => { subnet_id = v }
@@ -205,65 +206,109 @@ provider "helm" {
   }
 }
 
-resource "kubernetes_storage_class_v1" "efs" {
-  metadata {
-    name = "aws-efs"
-  }
-
-  storage_provisioner = "efs.csi.aws.com"
-  parameters = {
-    provisioningMode = "efs-ap"
-    fileSystemId     = module.efs.id
-    directoryPerms   = "777"
-  }
-
-  mount_options = ["iam"]
-}
-
-resource "aws_iam_role" "eks_efs" {
-  name = "${local.cluster_name}-efs"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Effect = "Allow"
-        Principal = {
-          Federated = module.eks.oidc_provider_arn
-        }
-        Condition = {
-          StringEquals = {
-            "${module.eks.oidc_provider_arn}:sub" = "system:serviceaccount:kube-system:efs-csi-controller-sa"
-          }
-        }
-      }
-    ]
-  })
-}
-
-
-resource "aws_iam_policy" "efs" {
-  name = "${local.cluster_name}-efs"
-
-  policy = <<EOF
+resource "aws_iam_policy" "efs_csi" {
+  name        = "efs-csi-policy"
+  description = "Policy for efs-csi"
+  policy      = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Action": [
-        "elasticfilesystem:*"
-      ],
       "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:DescribeAccessPoints",
+        "elasticfilesystem:DescribeFileSystems",
+        "elasticfilesystem:DescribeMountTargets",
+        "ec2:DescribeAvailabilityZones"
+      ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:CreateAccessPoint"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:RequestTag/efs.csi.aws.com/cluster": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:TagResource"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:ResourceTag/efs.csi.aws.com/cluster": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "elasticfilesystem:DeleteAccessPoint",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/efs.csi.aws.com/cluster": "true"
+        }
+      }
     }
   ]
 }
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "eks_efs_attach" {
-  role       = aws_iam_role.eks_efs.name
-  policy_arn = aws_iam_policy.efs.arn
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role" "efs_csi" {
+  name               = "efs-csi-role"
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.eks.oidc_provider, "https://", "")}"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringEquals": {
+                    "${replace(module.eks.oidc_provider, "https://", "")}:sub": "system:serviceaccount:kube-system:efs-csi-controller-sa"
+                }
+            }
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "efs_csi" {
+  role       = aws_iam_role.efs_csi.name
+  policy_arn = aws_iam_policy.efs_csi.arn
+}
+
+resource "kubernetes_storage_class_v1" "efs" {
+  metadata {
+    name = "aws-efs"
+  }
+
+  storage_provisioner = "efs.csi.aws.com"
+  volume_binding_mode = "WaitForFirstConsumer"
+  reclaim_policy      = "Retain"
+  parameters = {
+    provisioningMode = "efs-ap"
+    fileSystemId     = module.efs.id
+    directoryPerms   = "777"
+  }
+
+  mount_options = [
+    "iam", "tls"
+  ]
 }
 
 resource "helm_release" "aws_efs_csi_driver" {
@@ -279,11 +324,11 @@ resource "helm_release" "aws_efs_csi_driver" {
   }
   set {
     name  = "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.eks_efs.arn
+    value = aws_iam_role.efs_csi.arn
   }
   set {
     name  = "controller.serviceAccount.name"
-    value = "efs-${local.efs_csi_driver.service_account_name}"
+    value = local.efs_csi_driver.service_account_name
   }
   set {
     name  = "image.repository"
@@ -292,9 +337,9 @@ resource "helm_release" "aws_efs_csi_driver" {
 }
 
 // test pvc
-resource "kubernetes_persistent_volume" "shared-efs-volume" {
+resource "kubernetes_persistent_volume" "test-efs-volume" {
   metadata {
-    name = "${local.cluster_name}-shared-nfs"
+    name = "${local.cluster_name}-test-nfs"
   }
 
   spec {
@@ -317,9 +362,9 @@ resource "kubernetes_persistent_volume" "shared-efs-volume" {
   }
 }
 
-resource "kubernetes_persistent_volume_claim" "shared-efs-claim" {
+resource "kubernetes_persistent_volume_claim" "test-efs-claim" {
   metadata {
-    name      = "${local.cluster_name}-shared-nfs"
+    name      = "${local.cluster_name}-test-nfs"
     namespace = "default"
   }
 
@@ -330,7 +375,7 @@ resource "kubernetes_persistent_volume_claim" "shared-efs-claim" {
         storage = "1Mi"
       }
     }
-    volume_name        = kubernetes_persistent_volume.shared-efs-volume.metadata.0.name
+    volume_name        = kubernetes_persistent_volume.test-efs-volume.metadata.0.name
     storage_class_name = "aws-efs"
   }
 
