@@ -20,6 +20,8 @@ spec:
           envFrom:
             - secretRef:
                 name: scan-automate-api
+            - secretRef:
+                name: smtp-config
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

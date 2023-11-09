@@ -52,10 +52,13 @@ deploy-secrets(){
     local ARGO_TOKEN=`kubectl get secret -n argo default.service-account-token -o=jsonpath='{.data.token}' | base64 --decode`
     local scan_automate_api=`kubectl create secret generic scan-automate-api \
         --from-literal=JWT_SECRET=${JWT_SECRET:?} \
+        --from-literal=ARGO_WORKFLOW_TOKEN="Bearer $ARGO_TOKEN" \
+        --dry-run=client -o yaml`
+    local smtp=`kubectl create secret generic smtp-config \
         --from-literal=SMTP_HOST=${SMTP_HOST:?} \
         --from-literal=SMTP_USERNAME=${SMTP_USERNAME:?} \
         --from-literal=SMTP_PASSWORD=${SMTP_PASSWORD:?} \
-        --from-literal=ARGO_WORKFLOW_TOKEN="Bearer $ARGO_TOKEN" \
+        --from-literal=SMTP_FROM=${SMTP_FROM:?} \
         --dry-run=client -o yaml`
 
     echo "$aws" | kubectl apply -n argo -f -
@@ -63,6 +66,7 @@ deploy-secrets(){
     echo "$git" | kubectl apply -n argo -f -
 
     echo "$scan_automate_api" | kubectl apply -n scan-automate -f -
+    echo "$smtp" | kubectl apply -n scan-automate -f -
 }
 
 deploy-argocd

@@ -119,7 +119,7 @@ async fn scans_post(Json(req): Json<ScanRequest>) -> ApiResponse<ScanID> {
     );
 
     let email = Message::builder()
-        .from(CONFIG.email_from.parse()?)
+        .from(CONFIG.smtp_from.parse()?)
         .to(instance.req.email.parse()?)
         .subject("Confirm Scan Request")
         .header(ContentType::TEXT_PLAIN)

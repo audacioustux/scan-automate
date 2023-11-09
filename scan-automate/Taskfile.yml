@@ -19,11 +19,7 @@ tasks:
     dir: terraform
     cmd: aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
   ##
-  api:build-image:
-    cmds:
-      - pack build scan-automate-api -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
-      - docker tag scan-automate-api tanjim/scan-automate-api:latest
-      - docker push tanjim/scan-automate-api:latest
+  api:build-image: pack build tanjim/scan-automate-api --publish -b docker.io/paketocommunity/rust -B paketobuildpacks/builder-jammy-base
   api:port-forward: kubectl port-forward svc/scan-automate -n scan-automate 4000:80
   ### for development
   api:deps: cargo install systemfd cargo-watch

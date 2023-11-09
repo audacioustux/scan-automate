@@ -46,6 +46,10 @@ spec:
             template: get-signed-url
             dependencies:
               - gen-pdf
+          - name: send-signed-url
+            template: send-signed-url
+            dependencies:
+              - get-signed-url
     - name: rustscan
       inputs:
         parameters:
@@ -57,17 +61,6 @@ spec:
         args:
           - -c
           - |
-            # check if the current directory is writable by the user
-            if [ ! -w . ]; then
-              echo "Current directory is not writable by the user"
-              # print the permissions of the current directory
-              ls -la
-              # print current user and group
-              id
-              exit 1
-            fi
-            # exit on error
-            set -e
             # set explicit ulimit
             ulimit -n 5100
             # canonicalize url
@@ -102,15 +95,6 @@ spec:
         args:
           - -c
           - |
-            # check if the current directory is writable by the user
-            if [ ! -w . ]; then
-              echo "Current directory is not writable by the user"
-              # print the permissions of the current directory
-              ls -la
-              # print current user and group
-              id
-              exit 1
-            fi
             # run zap-baseline
             zap-baseline.py -t "{{inputs.parameters.uri}}" -w zap-report.md -I
             # whitelabel report
@@ -174,21 +158,43 @@ spec:
                 name: aws-config
                 key: AWS_SECRET_ACCESS_KEY
     - name: get-signed-url
+      container:
+        image: amazon/aws-cli:latest
+        command: aws s3 presign s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf --expires-in 604800 > /tmp/outputs/signed-url.txt
+        envFrom:
+          - secretRef:
+              name: aws-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      outputs:
+        parameters:
+          - name: signed-url
+            valueFrom:
+              path: /tmp/outputs/signed-url.txt
+    - name: send-signed-url
       inputs:
         parameters:
           - name: email
             value: "{{workflow.parameters.email}}"
+          - name: signed-url
+            value: "{{tasks.get-signed-url.outputs.parameters.signed-url}}"
       container:
-        image: amazon/aws-cli:latest
-        command: ["/bin/sh"]
+        image: tanjim/lettre-smtp:latest
         args:
-          - -c
-          - |
-            aws s3 presign s3://scan-automate-reports/report-{{workflow.parameters.id}}.pdf --expires-in 604800 > signed-url.txt
-            cat signed-url.txt
+          - --mail-to {{inputs.parameters.email}} 
+          - --subject "Scan Report for {{workflow.parameters.id}}"
+          - --body "{{inputs.parameters.signed-url}}"
         envFrom:
           - secretRef:
-              name: aws-config
+              name: smtp-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
   volumes:
     - name: docker-config
       secret:
