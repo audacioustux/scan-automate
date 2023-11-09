@@ -117,7 +117,7 @@ spec:
             mountPath: /zap/wrk
         resources:
           limits:
-            memory: 1Gi
+            memory: 2Gi
             cpu: "1"
           requests:
             memory: 500Mi
@@ -157,7 +157,7 @@ spec:
             path: /workdir/report-{{workflow.parameters.id}}.pdf
             s3:
               endpoint: s3.amazonaws.com
-              bucket: "{{workflow.parameters.email}}"
+              bucket: "scan-automate-reports"
               key: report-{{workflow.parameters.id}}.pdf.gz
               accessKeySecret:
                 name: aws-config
