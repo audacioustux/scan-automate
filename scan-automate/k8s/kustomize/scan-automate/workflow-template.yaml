@@ -169,11 +169,11 @@ spec:
           capabilities:
             drop:
               - ALL
-      outputs:
-        parameters:
-          - name: signed-url
-            valueFrom:
-              path: /tmp/outputs/signed-url.txt
+      # outputs:
+      #   parameters:
+      #     - name: signed-url
+      #       valueFrom:
+      #         path: /tmp/outputs/signed-url.txt
     # - name: send-signed-url
     #   inputs:
     #     parameters:
